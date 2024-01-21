@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"strings"
 	"syscall"
 	"time"
@@ -56,7 +57,7 @@ func main() {
 		return
 	}
 
-	appDataDirPath := fmt.Sprintf("%s/goph-keeper", userCache)
+	appDataDirPath := path.Join(userCache, "goph-keeper")
 	if err := os.Mkdir(appDataDirPath, os.ModePerm); err != nil && !errors.Is(err, os.ErrExist) {
 		log.Fatal(err)
 	}
@@ -65,13 +66,13 @@ func main() {
 	logPassApi := api.NewLogPassAPI(clientConfig.ServerBaseAddr, httpClient, clientSession)
 	cardApi := api.NewCardAPI(clientConfig.ServerBaseAddr, httpClient, clientSession)
 
-	logPassFileStorage, err := file.InitFileStorage(fmt.Sprintf("%s/logpass.json", appDataDirPath))
+	logPassFileStorage, err := file.InitFileStorage(path.Join(appDataDirPath, "logpass.json"))
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	cardFileStorage, err := file.InitFileStorage(fmt.Sprintf("%s/card.json", appDataDirPath))
+	cardFileStorage, err := file.InitFileStorage(path.Join(appDataDirPath, "card.json"))
 	if err != nil {
 		log.Println(err)
 		return
@@ -129,7 +130,7 @@ func main() {
 
 			fmt.Print("> ")
 			text, _ := reader.ReadString('\n')
-			text = strings.Replace(text, "\n", "", -1)
+			text = strings.Trim(text, "\n\r")
 			parts := strings.Split(text, " ")
 
 			err := commandManager.ExecCommandWithName(parts[0], parts[1:])
