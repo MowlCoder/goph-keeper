@@ -3,7 +3,6 @@ package clientsync
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/MowlCoder/goph-keeper/internal/domain"
 	"github.com/MowlCoder/goph-keeper/internal/session"
@@ -139,19 +138,6 @@ func (s *BaseSyncer) SyncCommandHandler(args []string) error {
 	}
 
 	return s.Sync(context.Background())
-}
-
-func (s *BaseSyncer) InfiniteSync(interval time.Duration) {
-	ticker := time.NewTicker(interval)
-
-	for range ticker.C {
-		ctx := context.Background()
-
-		err := s.Sync(ctx)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
 }
 
 func (s *BaseSyncer) prepareData(serverData map[int]entity, clientData map[int]entity) *preparedData {

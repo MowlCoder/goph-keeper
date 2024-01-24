@@ -9,6 +9,17 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS user_stored_data (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL,
+    data_type VARCHAR(75) NOT NULL,
+    data VARCHAR(255) NOT NULL,
+    path_on_disc VARCHAR(512),
+    meta TEXT,
+    version INT DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS log_pass (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
@@ -35,6 +46,7 @@ CREATE TABLE IF NOT EXISTS cards (
 -- +goose Down
 -- +goose StatementBegin
 SELECT 'down SQL query';
+DROP TABLE IF EXISTS user_stored_data;
 DROP TABLE IF EXISTS log_pass;
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS cards;

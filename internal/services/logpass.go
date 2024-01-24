@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"log"
 	"math"
 
 	"github.com/MowlCoder/goph-keeper/internal/domain"
@@ -20,18 +21,25 @@ type logPassRepository interface {
 	DeleteBatch(ctx context.Context, userID int, id []int) error
 }
 
+type userStoredDataRepository interface {
+	AddData(ctx context.Context, userID int, dataType string, data map[string]interface{}, meta string) (int64, error)
+}
+
 type LogPassService struct {
-	logPassRepository logPassRepository
-	cryptor           cryptorForLogPass
+	logPassRepository        logPassRepository
+	cryptor                  cryptorForLogPass
+	userStoredDataRepository userStoredDataRepository
 }
 
 func NewLogPassService(
 	logPassRepository logPassRepository,
 	cryptor cryptorForLogPass,
+	userStoredDataRepository userStoredDataRepository,
 ) *LogPassService {
 	return &LogPassService{
-		logPassRepository: logPassRepository,
-		cryptor:           cryptor,
+		logPassRepository:        logPassRepository,
+		cryptor:                  cryptor,
+		userStoredDataRepository: userStoredDataRepository,
 	}
 }
 
@@ -97,6 +105,22 @@ func (s *LogPassService) AddNewPair(
 ) (*domain.LogPass, error) {
 	var savedPassword = password
 	var err error
+
+	_, err = s.userStoredDataRepository.AddData(
+		ctx,
+		userID,
+		domain.LogPassDataType,
+		map[string]interface{}{
+			"login":    login,
+			"password": password,
+		},
+		source,
+	)
+
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 
 	if needEncrypt {
 		savedPassword, err = s.cryptor.Encrypt(password)

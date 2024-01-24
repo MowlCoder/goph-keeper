@@ -3,17 +3,17 @@ package session
 import "sync"
 
 type ClientSession struct {
+	mu *sync.RWMutex
+
 	token             string
 	deletedLogPassIDs map[int]struct{}
-
-	mu *sync.RWMutex
 }
 
 func NewClientSession() *ClientSession {
 	return &ClientSession{
-		deletedLogPassIDs: map[int]struct{}{},
-
 		mu: &sync.RWMutex{},
+
+		deletedLogPassIDs: map[int]struct{}{},
 	}
 }
 

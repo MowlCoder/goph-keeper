@@ -111,9 +111,6 @@ func main() {
 	registerLogPassCommands(commandManager, logPassHandler, logPassSyncer)
 	registerCardCommands(commandManager, cardHandler, cardSyncer)
 
-	go logPassSyncer.InfiniteSync(2 * time.Minute)
-	go cardSyncer.InfiniteSync(2 * time.Minute)
-
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Println("Goph Keeper")
