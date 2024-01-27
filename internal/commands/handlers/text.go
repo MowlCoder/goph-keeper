@@ -71,7 +71,9 @@ func (h *TextHandler) UpdateText(args []string) error {
 	}
 
 	if id >= 0 {
-		h.clientSession.AddEdited(id)
+		if err := h.clientSession.AddEdited(id); err != nil {
+			return err
+		}
 	}
 
 	fmt.Println("Successfully update text data")
@@ -98,7 +100,9 @@ func (h *TextHandler) DeleteText(args []string) error {
 	}
 
 	if id >= 0 {
-		h.clientSession.AddDeleted(id)
+		if err := h.clientSession.AddDeleted(id); err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("Successfully delete card with id %d\n", id)

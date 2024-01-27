@@ -36,6 +36,16 @@ func NewUserStoredDataRepository(file *os.File) *UserStoredDataRepository {
 	return repo
 }
 
+func (repo *UserStoredDataRepository) GetByID(ctx context.Context, id int) (*domain.UserStoredData, error) {
+	for _, data := range repo.structure {
+		if data.ID == id {
+			return &data, nil
+		}
+	}
+
+	return nil, domain.ErrUserStoredDataNotFound
+}
+
 func (repo *UserStoredDataRepository) GetAll(ctx context.Context) ([]domain.UserStoredData, error) {
 	dataSet := make([]domain.UserStoredData, len(repo.structure))
 	copy(dataSet, repo.structure)

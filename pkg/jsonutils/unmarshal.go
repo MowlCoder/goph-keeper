@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	maxBodyBytes = 64_000
+	maxBodyBytes = 52_428_800
 )
 
 func Unmarshal(w http.ResponseWriter, r *http.Request, data interface{}) (int, error) {

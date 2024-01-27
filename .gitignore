@@ -131,6 +131,7 @@ fabric.properties
 .history
 .ionide
 
+test-area
 TODO.txt
 bin
 .env.server

@@ -15,6 +15,7 @@ type cryptorForUserStoredDataService interface {
 }
 
 type userStoredDataRepository interface {
+	GetByID(ctx context.Context, id int) (*domain.UserStoredData, error)
 	GetAll(ctx context.Context) ([]domain.UserStoredData, error)
 	AddData(ctx context.Context, dataType string, data []byte, meta string) (int64, error)
 	GetWithType(ctx context.Context, dataType string, filters *domain.StorageFilters) ([]domain.UserStoredData, error)
@@ -36,6 +37,25 @@ func NewUserStoredDataService(repository userStoredDataRepository, cryptor crypt
 	}
 }
 
+func (s *UserStoredDataService) GetByID(ctx context.Context, id int) (*domain.UserStoredData, error) {
+	data, err := s.repository.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	decryptedBytes, err := s.cryptor.DecryptBytes(data.CryptedData)
+	if err != nil {
+		return nil, err
+	}
+
+	data.Data, err = s.parseData(data.DataType, decryptedBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
 func (s *UserStoredDataService) GetAll(ctx context.Context) ([]domain.UserStoredData, error) {
 	dataSet, err := s.repository.GetAll(ctx)
 	if err != nil {
@@ -48,27 +68,9 @@ func (s *UserStoredDataService) GetAll(ctx context.Context) ([]domain.UserStored
 			return nil, err
 		}
 
-		switch data.DataType {
-		case domain.LogPassDataType:
-			var parsedData domain.LogPassData
-			if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
-				return nil, err
-			}
-			dataSet[idx].Data = parsedData
-		case domain.CardDataType:
-			var parsedData domain.CardData
-			if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
-				return nil, err
-			}
-			dataSet[idx].Data = parsedData
-		case domain.TextDataType:
-			var parsedData domain.TextData
-			if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
-				return nil, err
-			}
-			dataSet[idx].Data = parsedData
-		default:
-			return nil, domain.ErrInvalidDataType
+		dataSet[idx].Data, err = s.parseData(data.DataType, decryptedBytes)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -91,27 +93,9 @@ func (s *UserStoredDataService) GetUserData(ctx context.Context, dataType string
 			return nil, err
 		}
 
-		switch dataType {
-		case domain.LogPassDataType:
-			var parsedData domain.LogPassData
-			if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
-				return nil, err
-			}
-			dataSet[idx].Data = parsedData
-		case domain.CardDataType:
-			var parsedData domain.CardData
-			if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
-				return nil, err
-			}
-			dataSet[idx].Data = parsedData
-		case domain.TextDataType:
-			var parsedData domain.TextData
-			if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
-				return nil, err
-			}
-			dataSet[idx].Data = parsedData
-		default:
-			return nil, domain.ErrInvalidDataType
+		dataSet[idx].Data, err = s.parseData(data.DataType, decryptedBytes)
+		if err != nil {
+			return nil, err
 		}
 	}
 
@@ -177,4 +161,39 @@ func (s *UserStoredDataService) DeleteBatch(ctx context.Context, ids []int) erro
 
 func (s *UserStoredDataService) DeleteByID(ctx context.Context, id int) error {
 	return s.repository.DeleteByID(ctx, id)
+}
+
+func (s *UserStoredDataService) parseData(dataType string, data []byte) (interface{}, error) {
+	switch dataType {
+	case domain.LogPassDataType:
+		var parsedData domain.LogPassData
+		if err := json.Unmarshal(data, &parsedData); err != nil {
+			return nil, err
+		}
+
+		return parsedData, nil
+	case domain.CardDataType:
+		var parsedData domain.CardData
+		if err := json.Unmarshal(data, &parsedData); err != nil {
+			return nil, err
+		}
+
+		return parsedData, nil
+	case domain.TextDataType:
+		var parsedData domain.TextData
+		if err := json.Unmarshal(data, &parsedData); err != nil {
+			return nil, err
+		}
+
+		return parsedData, nil
+	case domain.FileDataType:
+		var parsedData domain.FileData
+		if err := json.Unmarshal(data, &parsedData); err != nil {
+			return nil, err
+		}
+
+		return parsedData, nil
+	default:
+		return nil, domain.ErrInvalidDataType
+	}
 }

@@ -205,6 +205,13 @@ func (h *UserStoredDataHandler) parseUserDataBody(w http.ResponseWriter, r *http
 		}
 
 		return &body, nil
+	case domain.FileDataType:
+		var body dtos.AddNewFileBody
+		if _, err := jsonutil.Unmarshal(w, r, &body); err != nil {
+			return nil, err
+		}
+
+		return &body, nil
 	default:
 		return nil, domain.ErrInvalidDataType
 	}

@@ -1,85 +1,120 @@
 package session
 
-import "sync"
+import (
+	"encoding/json"
+	"errors"
+	"io"
+	"os"
+	"sync"
+)
 
 type ClientSession struct {
-	mu *sync.RWMutex
+	mu   *sync.RWMutex
+	file *os.File
 
-	token      string
-	deletedIDs map[int]struct{}
-	editedIDs  map[int]struct{}
+	Token      string           `json:"token"`
+	DeletedIDs map[int]struct{} `json:"deleted_ids"`
+	EditedIDs  map[int]struct{} `json:"edited_ids"`
 }
 
-func NewClientSession() *ClientSession {
-	return &ClientSession{
+func NewClientSession(file *os.File) *ClientSession {
+	session := &ClientSession{
 		mu: &sync.RWMutex{},
 
-		deletedIDs: map[int]struct{}{},
-		editedIDs:  map[int]struct{}{},
+		DeletedIDs: map[int]struct{}{},
+		EditedIDs:  map[int]struct{}{},
 	}
+
+	session.file = file
+
+	if err := json.NewDecoder(file).Decode(&session); err != nil {
+		if !errors.Is(err, io.EOF) {
+			panic(err)
+		}
+	}
+
+	session.Token = "" // TODO: validate token
+
+	return session
 }
 
 func (s *ClientSession) SetToken(token string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.token = token
+	s.Token = token
 }
 
 func (s *ClientSession) IsAuth() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	return s.token != ""
+	return s.Token != ""
 }
 
 func (s *ClientSession) GetToken() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	return s.token
+	return s.Token
 }
 
-func (s *ClientSession) AddDeleted(id int) {
+func (s *ClientSession) AddDeleted(id int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.deletedIDs[id] = struct{}{}
+	s.DeletedIDs[id] = struct{}{}
+	return s.SaveInFile()
 }
 
 func (s *ClientSession) IsDeleted(id int) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	_, ok := s.deletedIDs[id]
+	_, ok := s.DeletedIDs[id]
 	return ok
 }
 
-func (s *ClientSession) ClearDeleted() {
+func (s *ClientSession) ClearDeleted() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	clear(s.deletedIDs)
+	clear(s.DeletedIDs)
+	return s.SaveInFile()
 }
 
-func (s *ClientSession) AddEdited(id int) {
+func (s *ClientSession) AddEdited(id int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.editedIDs[id] = struct{}{}
+	s.EditedIDs[id] = struct{}{}
+	return s.SaveInFile()
 }
 
 func (s *ClientSession) IsEdited(id int) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	_, ok := s.editedIDs[id]
+	_, ok := s.EditedIDs[id]
 	return ok
 }
 
-func (s *ClientSession) ClearEdited() {
+func (s *ClientSession) ClearEdited() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	clear(s.editedIDs)
+	clear(s.EditedIDs)
+	return s.SaveInFile()
+}
+
+func (s *ClientSession) SaveInFile() error {
+	if err := s.file.Truncate(0); err != nil {
+		return err
+	}
+	if _, err := s.file.Seek(0, 0); err != nil {
+		return err
+	}
+
+	writer := json.NewEncoder(s.file)
+	return writer.Encode(s)
 }

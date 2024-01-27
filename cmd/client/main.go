@@ -47,7 +47,7 @@ func main() {
 
 	httpClient := &http.Client{
 		Transport: http.DefaultTransport,
-		Timeout:   time.Second * 20,
+		Timeout:   time.Second * 60,
 	}
 
 	userCache, err := os.UserCacheDir()
@@ -61,14 +61,22 @@ func main() {
 		log.Fatal(err)
 	}
 
-	clientSession := session.NewClientSession()
-	userStoredDataAPI := api.NewUserStoredDataAPI(clientConfig.ServerBaseAddr, httpClient, clientSession)
-
 	userStoredDataStorage, err := file.InitFileStorage(path.Join(appDataDirPath, "user_stored_data.json"))
 	if err != nil {
 		log.Println(err)
 		return
 	}
+	defer userStoredDataStorage.Close()
+
+	sessionStorage, err := file.InitFileStorage(path.Join(appDataDirPath, "session.json"))
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer sessionStorage.Close()
+
+	clientSession := session.NewClientSession(sessionStorage)
+	userStoredDataAPI := api.NewUserStoredDataAPI(clientConfig.ServerBaseAddr, httpClient, clientSession)
 
 	userStoredDataRepository := fileRepositories.NewUserStoredDataRepository(userStoredDataStorage)
 
@@ -80,6 +88,7 @@ func main() {
 	logPassHandler := handlers.NewLogPassHandler(clientSession, userStoredDataService)
 	cardHandler := handlers.NewCardHandler(clientSession, userStoredDataService)
 	textHandler := handlers.NewTextHandler(clientSession, userStoredDataService)
+	fileHandler := handlers.NewFileHandler(clientSession, userStoredDataService)
 
 	dataSyncer := clientsync.NewBaseSyncer(
 		clientSession,
@@ -90,11 +99,12 @@ func main() {
 
 	commandManager := commands.NewCommandManager()
 
-	registerSystemCommands(commandManager, dataSyncer)
+	registerSystemCommands(commandManager, dataSyncer, appDataDirPath)
 	registerUserCommands(commandManager, userHandler)
 	registerLogPassCommands(commandManager, logPassHandler)
 	registerCardCommands(commandManager, cardHandler)
 	registerTextCommands(commandManager, textHandler)
+	registerFileCommands(commandManager, fileHandler)
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -140,20 +150,13 @@ func main() {
 			os.Exit(1)
 		}
 	}()
-
-	fmt.Println("Saving data...")
-
-	if err := dataSyncer.Sync(shutdownCtx); err != nil {
-		fmt.Println("Error when saving data -", err.Error())
-		return
-	}
-
-	fmt.Println("Successfully saved all data!")
 }
 
 func registerSystemCommands(
 	commandManager *commands.CommandManager,
 	dataSyncer *clientsync.BaseSyncer,
+
+	fileStoragePath string,
 ) {
 	commandManager.RegisterCommand(
 		"version",
@@ -165,6 +168,16 @@ func registerSystemCommands(
 			fmt.Printf("Version: %s\n", buildVersion)
 			fmt.Printf("Build date: %s\n", buildDate)
 			fmt.Println("==========================================")
+			return nil
+		},
+	)
+	commandManager.RegisterCommand(
+		"storage",
+		"show path to directory where data stores",
+		"system",
+		"storage",
+		func(args []string) error {
+			fmt.Println(fileStoragePath)
 			return nil
 		},
 	)
@@ -296,5 +309,46 @@ func registerTextCommands(
 		"text",
 		"text-del <id:int>",
 		textHandler.DeleteText,
+	)
+}
+
+func registerFileCommands(
+	commandManager *commands.CommandManager,
+	fileHandler *handlers.FileHandler,
+) {
+	commandManager.RegisterCommand(
+		"file-save",
+		"save file",
+		"file",
+		"file-save <path:string> <meta:string>",
+		fileHandler.AddFile,
+	)
+	commandManager.RegisterCommand(
+		"file-get",
+		"get files",
+		"file",
+		"file-get <page:int>",
+		fileHandler.GetFiles,
+	)
+	commandManager.RegisterCommand(
+		"file-decrypt",
+		"decrypt file to given directory",
+		"file",
+		"file-decrypt <id:int> <dir:string>",
+		fileHandler.DecryptFile,
+	)
+	commandManager.RegisterCommand(
+		"file-upd",
+		"update file by id",
+		"file",
+		"file-upd <id:int> <path:string> <meta:string>",
+		fileHandler.UpdateFile,
+	)
+	commandManager.RegisterCommand(
+		"file-del",
+		"delete file by id",
+		"file",
+		"file-del <id:int>",
+		fileHandler.DeleteFile,
 	)
 }

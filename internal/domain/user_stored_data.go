@@ -6,6 +6,7 @@ const (
 	LogPassDataType = "logpass"
 	CardDataType    = "card"
 	TextDataType    = "text"
+	FileDataType    = "file"
 )
 
 type UserStoredData struct {
@@ -37,6 +38,11 @@ type CardData struct {
 
 type TextData struct {
 	Text string `json:"text"`
+}
+
+type FileData struct {
+	Content []byte `json:"content"`
+	Name    string `json:"name"`
 }
 
 type AddUserStoredDataBody interface {

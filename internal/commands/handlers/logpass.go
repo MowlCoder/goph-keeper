@@ -71,7 +71,9 @@ func (h *LogPassHandler) UpdatePair(args []string) error {
 	}
 
 	if id >= 0 {
-		h.clientSession.AddEdited(id)
+		if err := h.clientSession.AddEdited(id); err != nil {
+			return err
+		}
 	}
 
 	fmt.Println("Successfully update logpass data")
@@ -98,7 +100,9 @@ func (h *LogPassHandler) DeletePair(args []string) error {
 	}
 
 	if id >= 0 {
-		h.clientSession.AddDeleted(id)
+		if err := h.clientSession.AddDeleted(id); err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("Successfully delete log:pass pair with id %d\n", id)
