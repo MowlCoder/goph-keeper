@@ -18,6 +18,28 @@ func NewUserStoredDataRepository(pool *pgxpool.Pool) *UserStoredDataRepository {
 	}
 }
 
+func (repo *UserStoredDataRepository) GetByID(ctx context.Context, id int) (*domain.UserStoredData, error) {
+	query := `
+		SELECT id, user_id, data_type, data, meta, version, created_at FROM user_stored_data
+		WHERE id = $1 
+	`
+
+	var userData domain.UserStoredData
+	if err := repo.pool.QueryRow(ctx, query, id).Scan(
+		&userData.ID,
+		&userData.UserID,
+		&userData.DataType,
+		&userData.CryptedData,
+		&userData.Meta,
+		&userData.Version,
+		&userData.CreatedAt,
+	); err != nil {
+		return nil, err
+	}
+
+	return &userData, nil
+}
+
 func (repo *UserStoredDataRepository) GetUserAllData(ctx context.Context, userID int) ([]domain.UserStoredData, error) {
 	query := `
 		SELECT id, user_id, data_type, data, meta, version, created_at FROM user_stored_data
@@ -100,6 +122,30 @@ func (repo *UserStoredDataRepository) AddData(ctx context.Context, userID int, d
 	}
 
 	return insertedID, nil
+}
+
+func (repo *UserStoredDataRepository) UpdateUserData(ctx context.Context, userID int, dataID int, data interface{}, meta string) (*domain.UserStoredData, error) {
+	query := `
+		UPDATE user_stored_data
+		SET data = $1, meta = $2, version = version + 1
+		WHERE id = $3 AND user_id = $4
+		RETURNING id, user_id, data_type, data, meta, version, created_at
+	`
+
+	var userData domain.UserStoredData
+	if err := repo.pool.QueryRow(ctx, query, data, meta, dataID, userID).Scan(
+		&userData.ID,
+		&userData.UserID,
+		&userData.DataType,
+		&userData.CryptedData,
+		&userData.Meta,
+		&userData.Version,
+		&userData.CreatedAt,
+	); err != nil {
+		return nil, err
+	}
+
+	return &userData, nil
 }
 
 func (repo *UserStoredDataRepository) DeleteByID(ctx context.Context, userID int, id int) error {

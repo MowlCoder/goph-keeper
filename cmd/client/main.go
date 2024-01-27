@@ -79,6 +79,7 @@ func main() {
 	userHandler := handlers.NewUserHandler(httpClient, clientSession)
 	logPassHandler := handlers.NewLogPassHandler(clientSession, userStoredDataService)
 	cardHandler := handlers.NewCardHandler(clientSession, userStoredDataService)
+	textHandler := handlers.NewTextHandler(clientSession, userStoredDataService)
 
 	dataSyncer := clientsync.NewBaseSyncer(
 		clientSession,
@@ -93,6 +94,7 @@ func main() {
 	registerUserCommands(commandManager, userHandler)
 	registerLogPassCommands(commandManager, logPassHandler)
 	registerCardCommands(commandManager, cardHandler)
+	registerTextCommands(commandManager, textHandler)
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -214,6 +216,13 @@ func registerLogPassCommands(
 		logPassHandler.GetPairs,
 	)
 	commandManager.RegisterCommand(
+		"lp-upd",
+		"update logpass pair by id",
+		"login password",
+		"lp-upd <id:int> <login:string> <password:string> <source:string>",
+		logPassHandler.UpdatePair,
+	)
+	commandManager.RegisterCommand(
 		"lp-del",
 		"delete login password pair by id",
 		"login password",
@@ -241,10 +250,51 @@ func registerCardCommands(
 		cardHandler.GetCards,
 	)
 	commandManager.RegisterCommand(
+		"card-upd",
+		"update card by id",
+		"card",
+		"card-upd <id:int> <number:string> <expiredAt:string> <cvv:string> <meta:string>",
+		cardHandler.UpdateCard,
+	)
+	commandManager.RegisterCommand(
 		"card-del",
 		"delete card by id",
 		"card",
 		"card-del <id:int>",
 		cardHandler.DeleteCard,
+	)
+}
+
+func registerTextCommands(
+	commandManager *commands.CommandManager,
+	textHandler *handlers.TextHandler,
+) {
+	commandManager.RegisterCommand(
+		"text-save",
+		"save new text",
+		"text",
+		"text-save <title:string> <text:string>",
+		textHandler.AddText,
+	)
+	commandManager.RegisterCommand(
+		"text-get",
+		"get texts",
+		"text",
+		"text-get <page:int>",
+		textHandler.GetTexts,
+	)
+	commandManager.RegisterCommand(
+		"text-upd",
+		"update text by id",
+		"text",
+		"text-upd <id:int> <meta:string> <text:string>",
+		textHandler.UpdateText,
+	)
+	commandManager.RegisterCommand(
+		"text-del",
+		"delete text by id",
+		"text",
+		"text-del <id:int>",
+		textHandler.DeleteText,
 	)
 }

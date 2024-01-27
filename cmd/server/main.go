@@ -74,7 +74,13 @@ func main() {
 	log.Println("goph-keeper server is running on", serverConfig.HTTPAddr)
 
 	go func() {
-		err := server.ListenAndServe()
+		var err error
+
+		if serverConfig.EnableHTTPS {
+			err = server.ListenAndServeTLS(serverConfig.SSLPemPath, serverConfig.SSLKeyPath)
+		} else {
+			err = server.ListenAndServe()
+		}
 
 		if err != nil && err != http.ErrServerClosed {
 			log.Fatal(err)
@@ -121,6 +127,8 @@ func makeHTTPRouter(
 
 		apiRouter.Route("/data", func(dataRouter chi.Router) {
 			dataRouter.Use(authMiddleware.Middleware)
+			dataRouter.Put("/update", userStoredDataHandler.Update)
+			dataRouter.Put("/update/{id}", userStoredDataHandler.UpdateOne)
 			dataRouter.Get("/{type}", userStoredDataHandler.GetOfType)
 			dataRouter.Post("/{type}", userStoredDataHandler.Add)
 			dataRouter.Get("/", userStoredDataHandler.GetUserAll)

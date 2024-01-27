@@ -6,7 +6,6 @@ import (
 	"strconv"
 
 	"github.com/MowlCoder/goph-keeper/internal/domain"
-	"github.com/MowlCoder/goph-keeper/internal/dtos"
 	"github.com/MowlCoder/goph-keeper/internal/session"
 )
 
@@ -33,10 +32,9 @@ func (h *LogPassHandler) AddPair(args []string) error {
 	_, err := h.userStoredDataService.Add(
 		context.Background(),
 		domain.LogPassDataType,
-		&dtos.AddNewLogPassBody{
+		&domain.LogPassData{
 			Login:    args[0],
 			Password: args[1],
-			Meta:     args[2],
 		},
 		args[2],
 	)
@@ -45,6 +43,38 @@ func (h *LogPassHandler) AddPair(args []string) error {
 	}
 
 	fmt.Println("Successfully saved new log:pass pair!")
+
+	return nil
+}
+
+func (h *LogPassHandler) UpdatePair(args []string) error {
+	if len(args) != 4 {
+		return domain.ErrInvalidCommandUsage
+	}
+
+	id, err := strconv.Atoi(args[0])
+	if err != nil {
+		return domain.ErrInvalidCommandUsage
+	}
+
+	_, err = h.userStoredDataService.UpdateByID(
+		context.Background(),
+		id,
+		domain.LogPassData{
+			Login:    args[1],
+			Password: args[2],
+		},
+		args[3],
+	)
+	if err != nil {
+		return err
+	}
+
+	if id >= 0 {
+		h.clientSession.AddEdited(id)
+	}
+
+	fmt.Println("Successfully update logpass data")
 
 	return nil
 }
@@ -68,7 +98,7 @@ func (h *LogPassHandler) DeletePair(args []string) error {
 	}
 
 	if id >= 0 {
-		h.clientSession.AddDeletedLogPassID(id)
+		h.clientSession.AddDeleted(id)
 	}
 
 	fmt.Printf("Successfully delete log:pass pair with id %d\n", id)

@@ -5,15 +5,17 @@ import "sync"
 type ClientSession struct {
 	mu *sync.RWMutex
 
-	token             string
-	deletedLogPassIDs map[int]struct{}
+	token      string
+	deletedIDs map[int]struct{}
+	editedIDs  map[int]struct{}
 }
 
 func NewClientSession() *ClientSession {
 	return &ClientSession{
 		mu: &sync.RWMutex{},
 
-		deletedLogPassIDs: map[int]struct{}{},
+		deletedIDs: map[int]struct{}{},
+		editedIDs:  map[int]struct{}{},
 	}
 }
 
@@ -38,24 +40,46 @@ func (s *ClientSession) GetToken() string {
 	return s.token
 }
 
-func (s *ClientSession) AddDeletedLogPassID(id int) {
+func (s *ClientSession) AddDeleted(id int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.deletedLogPassIDs[id] = struct{}{}
+	s.deletedIDs[id] = struct{}{}
 }
 
-func (s *ClientSession) IsLogPassDeleted(id int) bool {
+func (s *ClientSession) IsDeleted(id int) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	_, ok := s.deletedLogPassIDs[id]
+	_, ok := s.deletedIDs[id]
 	return ok
 }
 
-func (s *ClientSession) ClearLogPassDeleted() {
+func (s *ClientSession) ClearDeleted() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	clear(s.deletedLogPassIDs)
+	clear(s.deletedIDs)
+}
+
+func (s *ClientSession) AddEdited(id int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.editedIDs[id] = struct{}{}
+}
+
+func (s *ClientSession) IsEdited(id int) bool {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	_, ok := s.editedIDs[id]
+	return ok
+}
+
+func (s *ClientSession) ClearEdited() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	clear(s.editedIDs)
 }

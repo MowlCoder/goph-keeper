@@ -18,7 +18,9 @@ import (
 type userStoredDataService interface {
 	GetAllUserData(ctx context.Context, userID int) ([]domain.UserStoredData, error)
 	Add(ctx context.Context, userID int, dataType string, data interface{}, meta string) (*domain.UserStoredData, error)
+	GetUserDataByID(ctx context.Context, userID int, id int) (*domain.UserStoredData, error)
 	GetUserData(ctx context.Context, userID int, dataType string, filters *domain.StorageFilters) (*domain.PaginatedResult, error)
+	UpdateUserData(ctx context.Context, userID int, dataID int, data interface{}, meta string) (*domain.UserStoredData, error)
 	DeleteBatch(ctx context.Context, userID int, ids []int) error
 }
 
@@ -92,25 +94,9 @@ func (h *UserStoredDataHandler) Add(w http.ResponseWriter, r *http.Request) {
 	}
 
 	dataType := chi.URLParam(r, "type")
-	var dataBody domain.AddUserStoredDataBody
-
-	switch dataType {
-	case domain.LogPassDataType:
-		var body dtos.AddNewLogPassBody
-		if statusCode, err := jsonutil.Unmarshal(w, r, &body); err != nil {
-			httputils.SendJSONErrorResponse(w, statusCode, err.Error(), statusCode)
-			return
-		}
-		dataBody = &body
-	case domain.CardDataType:
-		var body dtos.AddNewCardBody
-		if statusCode, err := jsonutil.Unmarshal(w, r, &body); err != nil {
-			httputils.SendJSONErrorResponse(w, statusCode, err.Error(), statusCode)
-			return
-		}
-		dataBody = &body
-	default:
-		httperrors.Handle(w, domain.ErrInvalidDataType)
+	dataBody, err := h.parseUserDataBody(w, r, dataType)
+	if err != nil {
+		httperrors.Handle(w, err)
 		return
 	}
 
@@ -119,13 +105,54 @@ func (h *UserStoredDataHandler) Add(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	data, err := h.service.Add(r.Context(), userID, dataType, dataBody, dataBody.GetMeta())
+	data, err := h.service.Add(r.Context(), userID, dataType, dataBody.GetData(), dataBody.GetMeta())
 	if err != nil {
 		httperrors.Handle(w, err)
 		return
 	}
 
 	httputils.SendJSONResponse(w, http.StatusCreated, data)
+}
+
+func (h *UserStoredDataHandler) Update(w http.ResponseWriter, r *http.Request) {}
+
+func (h *UserStoredDataHandler) UpdateOne(w http.ResponseWriter, r *http.Request) {
+	userID, err := usercontext.GetUserIDFromContext(r.Context())
+	if err != nil {
+		httperrors.Handle(w, domain.ErrNotAuth)
+		return
+	}
+
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		httperrors.Handle(w, domain.ErrUserStoredDataNotFound)
+		return
+	}
+
+	oldData, err := h.service.GetUserDataByID(r.Context(), userID, id)
+	if err != nil {
+		httperrors.Handle(w, domain.ErrUserStoredDataNotFound)
+		return
+	}
+
+	dataBody, err := h.parseUserDataBody(w, r, oldData.DataType)
+	if err != nil {
+		httperrors.Handle(w, err)
+		return
+	}
+
+	if !dataBody.Valid() {
+		httperrors.Handle(w, domain.ErrInvalidBody)
+		return
+	}
+
+	updatedUserData, err := h.service.UpdateUserData(r.Context(), userID, id, dataBody.GetData(), dataBody.GetMeta())
+	if err != nil {
+		httperrors.Handle(w, err)
+		return
+	}
+
+	httputils.SendJSONResponse(w, http.StatusOK, updatedUserData)
 }
 
 func (h *UserStoredDataHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
@@ -153,4 +180,32 @@ func (h *UserStoredDataHandler) DeleteBatch(w http.ResponseWriter, r *http.Reque
 	}
 
 	httputils.SendStatusCode(w, http.StatusNoContent)
+}
+
+func (h *UserStoredDataHandler) parseUserDataBody(w http.ResponseWriter, r *http.Request, dataType string) (domain.AddUserStoredDataBody, error) {
+	switch dataType {
+	case domain.LogPassDataType:
+		var body dtos.AddNewLogPassBody
+		if _, err := jsonutil.Unmarshal(w, r, &body); err != nil {
+			return nil, err
+		}
+
+		return &body, nil
+	case domain.CardDataType:
+		var body dtos.AddNewCardBody
+		if _, err := jsonutil.Unmarshal(w, r, &body); err != nil {
+			return nil, err
+		}
+
+		return &body, nil
+	case domain.TextDataType:
+		var body dtos.AddNewTextBody
+		if _, err := jsonutil.Unmarshal(w, r, &body); err != nil {
+			return nil, err
+		}
+
+		return &body, nil
+	default:
+		return nil, domain.ErrInvalidDataType
+	}
 }

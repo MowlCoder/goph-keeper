@@ -110,6 +110,33 @@ func (repo *UserStoredDataRepository) AddData(ctx context.Context, dataType stri
 	return int64(userStoredData.ID), nil
 }
 
+func (repo *UserStoredDataRepository) UpdateByID(ctx context.Context, id int, data []byte, meta string) (*domain.UserStoredData, error) {
+	foundIdx := 0
+	isFound := false
+
+	for idx, pair := range repo.structure {
+		if pair.ID == id {
+			isFound = true
+			foundIdx = idx
+			break
+		}
+	}
+
+	if !isFound {
+		return nil, domain.ErrNotFound
+	}
+
+	repo.structure[foundIdx].CryptedData = data
+	repo.structure[foundIdx].Meta = meta
+	if err := repo.SaveInFile(); err != nil {
+		return nil, err
+	}
+
+	updatedData := repo.structure[foundIdx]
+
+	return &updatedData, nil
+}
+
 func (repo *UserStoredDataRepository) DeleteByID(ctx context.Context, id int) error {
 	foundIdx := 0
 	isFound := false

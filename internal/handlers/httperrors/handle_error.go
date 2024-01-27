@@ -33,6 +33,10 @@ var errorToErrorInfo = map[error]errorInfo{
 		statusCode: http.StatusBadRequest,
 		errorCode:  5,
 	},
+	domain.ErrUserStoredDataNotFound: {
+		statusCode: http.StatusNotFound,
+		errorCode:  6,
+	},
 	domain.ErrNotAuth: {
 		statusCode: http.StatusUnauthorized,
 		errorCode:  401,

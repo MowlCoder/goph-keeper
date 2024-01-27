@@ -1,8 +1,11 @@
 package clientsync
 
 import (
+	"bufio"
 	"context"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/MowlCoder/goph-keeper/internal/domain"
 	"github.com/MowlCoder/goph-keeper/internal/session"
@@ -11,18 +14,23 @@ import (
 type serverApi interface {
 	GetAll(ctx context.Context) ([]domain.UserStoredData, error)
 	Add(ctx context.Context, entity domain.UserStoredData) (*domain.UserStoredData, error)
+	UpdateByID(ctx context.Context, id int, data interface{}, meta string) (*domain.UserStoredData, error)
 	DeleteBatch(ctx context.Context, ids []int) error
 }
 
 type localService interface {
 	GetAll(ctx context.Context) ([]domain.UserStoredData, error)
 	Add(ctx context.Context, dataType string, data interface{}, meta string) (*domain.UserStoredData, error)
+	UpdateByID(ctx context.Context, id int, data interface{}, meta string) (*domain.UserStoredData, error)
 	DeleteBatch(ctx context.Context, ids []int) error
 }
 
 type preparedData struct {
 	DelFromServer []int
 	DelFromClient []int
+
+	EditOnClient []domain.UserStoredData
+	EditOnServer []domain.UserStoredData
 
 	AddToServer []domain.UserStoredData
 	AddToClient []domain.UserStoredData
@@ -84,6 +92,38 @@ func (s *BaseSyncer) Sync(ctx context.Context) error {
 		}
 	}
 
+	if len(data.EditOnClient) > 0 {
+		for _, editData := range data.EditOnClient {
+			_, err := s.localService.UpdateByID(ctx, editData.ID, editData.Data, editData.Meta)
+			if err != nil {
+				return err
+			}
+
+			s.localRepository.SyncUpdate(
+				context.Background(),
+				editData.ID,
+				editData.ID,
+				editData.Version,
+			)
+		}
+	}
+
+	if len(data.EditOnServer) > 0 {
+		for _, editData := range data.EditOnServer {
+			updateData, err := s.serverApi.UpdateByID(ctx, editData.ID, editData.Data, editData.Meta)
+			if err != nil {
+				return err
+			}
+
+			s.localRepository.SyncUpdate(
+				context.Background(),
+				editData.ID,
+				updateData.ID,
+				updateData.Version,
+			)
+		}
+	}
+
 	if len(data.AddToServer) > 0 {
 		for _, data := range data.AddToServer {
 			newData, err := s.serverApi.Add(
@@ -122,7 +162,8 @@ func (s *BaseSyncer) Sync(ctx context.Context) error {
 		}
 	}
 
-	s.clientSession.ClearLogPassDeleted()
+	s.clientSession.ClearDeleted()
+	s.clientSession.ClearEdited()
 
 	return nil
 }
@@ -140,18 +181,35 @@ func (s *BaseSyncer) prepareData(serverData map[int]domain.UserStoredData, clien
 		DelFromServer: make([]int, 0),
 		DelFromClient: make([]int, 0),
 
+		EditOnServer: make([]domain.UserStoredData, 0),
+		EditOnClient: make([]domain.UserStoredData, 0),
+
 		AddToServer: make([]domain.UserStoredData, 0),
 		AddToClient: make([]domain.UserStoredData, 0),
 	}
 
 	for _, data := range serverData {
-		if s.clientSession.IsLogPassDeleted(data.ID) {
+		if s.clientSession.IsDeleted(data.ID) {
 			pd.DelFromServer = append(pd.DelFromServer, data.ID)
 			continue
 		}
 
-		if _, ok := clientData[data.ID]; !ok {
+		if s.clientSession.IsEdited(data.ID) {
+			if data.Version == clientData[data.ID].Version {
+				pd.EditOnServer = append(pd.EditOnServer, clientData[data.ID])
+			} else {
+				s.userMerge(pd, clientData[data.ID], data)
+			}
+
+			continue
+		}
+
+		if dateFromClient, ok := clientData[data.ID]; !ok {
 			pd.AddToClient = append(pd.AddToClient, data)
+		} else {
+			if dateFromClient.Version != data.Version {
+				pd.EditOnClient = append(pd.EditOnClient, data)
+			}
 		}
 	}
 
@@ -168,6 +226,29 @@ func (s *BaseSyncer) prepareData(serverData map[int]domain.UserStoredData, clien
 	}
 
 	return pd
+}
+
+func (s *BaseSyncer) userMerge(pd *preparedData, clientData domain.UserStoredData, serverData domain.UserStoredData) {
+	fmt.Printf("\nYou need to merge data with id - %d\n", serverData.ID)
+	fmt.Print("Client data: ")
+	fmt.Println(clientData.Data, clientData.Meta)
+	fmt.Print("Server data: ")
+	fmt.Println(serverData.Data, serverData.Meta)
+	reader := bufio.NewReader(os.Stdin)
+
+	for {
+		fmt.Print("Enter 'server' or 'client': ")
+		text, _ := reader.ReadString('\n')
+		text = strings.Trim(text, "\n\r")
+
+		if text == "server" {
+			pd.EditOnClient = append(pd.EditOnClient, serverData)
+			break
+		} else if text == "client" {
+			pd.EditOnServer = append(pd.EditOnServer, clientData)
+			break
+		}
+	}
 }
 
 func (s *BaseSyncer) getServerData(ctx context.Context) (map[int]domain.UserStoredData, error) {

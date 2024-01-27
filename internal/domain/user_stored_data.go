@@ -5,6 +5,7 @@ import "time"
 const (
 	LogPassDataType = "logpass"
 	CardDataType    = "card"
+	TextDataType    = "text"
 )
 
 type UserStoredData struct {
@@ -34,7 +35,12 @@ type CardData struct {
 	CVV       string `json:"cvv"`
 }
 
+type TextData struct {
+	Text string `json:"text"`
+}
+
 type AddUserStoredDataBody interface {
 	Valid() bool
+	GetData() interface{}
 	GetMeta() string
 }

@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS user_stored_data (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL,
     data_type VARCHAR(75) NOT NULL,
-    data VARCHAR(255) NOT NULL,
+    data TEXT NOT NULL,
     path_on_disc VARCHAR(512),
     meta TEXT,
     version INT DEFAULT 1,

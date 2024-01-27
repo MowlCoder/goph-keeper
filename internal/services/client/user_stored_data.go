@@ -19,6 +19,7 @@ type userStoredDataRepository interface {
 	AddData(ctx context.Context, dataType string, data []byte, meta string) (int64, error)
 	GetWithType(ctx context.Context, dataType string, filters *domain.StorageFilters) ([]domain.UserStoredData, error)
 	CountUserDataOfType(ctx context.Context, dataType string) (int, error)
+	UpdateByID(ctx context.Context, id int, data []byte, meta string) (*domain.UserStoredData, error)
 	DeleteByID(ctx context.Context, id int) error
 	DeleteBatch(ctx context.Context, ids []int) error
 }
@@ -60,6 +61,12 @@ func (s *UserStoredDataService) GetAll(ctx context.Context) ([]domain.UserStored
 				return nil, err
 			}
 			dataSet[idx].Data = parsedData
+		case domain.TextDataType:
+			var parsedData domain.TextData
+			if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
+				return nil, err
+			}
+			dataSet[idx].Data = parsedData
 		default:
 			return nil, domain.ErrInvalidDataType
 		}
@@ -93,6 +100,12 @@ func (s *UserStoredDataService) GetUserData(ctx context.Context, dataType string
 			dataSet[idx].Data = parsedData
 		case domain.CardDataType:
 			var parsedData domain.CardData
+			if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
+				return nil, err
+			}
+			dataSet[idx].Data = parsedData
+		case domain.TextDataType:
+			var parsedData domain.TextData
 			if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
 				return nil, err
 			}
@@ -134,6 +147,28 @@ func (s *UserStoredDataService) Add(ctx context.Context, dataType string, data i
 		Version:   1,
 		CreatedAt: time.Now().UTC(),
 	}, nil
+}
+
+func (s *UserStoredDataService) UpdateByID(ctx context.Context, id int, data interface{}, meta string) (*domain.UserStoredData, error) {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	encrypted, err := s.cryptor.EncryptBytes(jsonData)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedData, err := s.repository.UpdateByID(ctx, id, encrypted, meta)
+	if err != nil {
+		return nil, err
+	}
+
+	updatedData.Data = data
+	updatedData.CryptedData = nil
+
+	return updatedData, nil
 }
 
 func (s *UserStoredDataService) DeleteBatch(ctx context.Context, ids []int) error {

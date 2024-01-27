@@ -4,65 +4,82 @@ import (
 	"context"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/MowlCoder/goph-keeper/internal/domain"
 	"github.com/MowlCoder/goph-keeper/internal/session"
-	"github.com/MowlCoder/goph-keeper/internal/validators"
 )
 
-type CardHandler struct {
+type TextHandler struct {
 	clientSession *session.ClientSession
 
 	userStoredDataService userStoredDataService
 }
 
-func NewCardHandler(
+func NewTextHandler(
 	clientSession *session.ClientSession,
 	userStoredDataService userStoredDataService,
-) *CardHandler {
-	return &CardHandler{
+) *TextHandler {
+	return &TextHandler{
 		clientSession:         clientSession,
 		userStoredDataService: userStoredDataService,
 	}
 }
 
-func (h *CardHandler) AddCard(args []string) error {
-	if len(args) < 4 {
+func (h *TextHandler) AddText(args []string) error {
+	if len(args) == 0 {
 		return domain.ErrInvalidCommandUsage
-	}
-
-	if !validators.ValidateCardNumber(args[0]) {
-		return domain.ErrInvalidCardNumber
-	}
-
-	if !validators.ValidateExpiredAt(args[1]) {
-		return domain.ErrInvalidCardExpiredAt
-	}
-
-	if !validators.ValidateCVV(args[2]) {
-		return domain.ErrInvalidCardCVV
 	}
 
 	_, err := h.userStoredDataService.Add(
 		context.Background(),
-		domain.CardDataType,
-		domain.CardData{
-			Number:    args[0],
-			ExpiredAt: args[1],
-			CVV:       args[2],
+		domain.TextDataType,
+		domain.TextData{
+			Text: strings.Join(args[1:], " "),
 		},
-		args[3],
+		args[0],
 	)
 	if err != nil {
 		return err
 	}
 
-	fmt.Println("Successfully saved new card!")
+	fmt.Println("Successfully saved new text!")
 
 	return nil
 }
 
-func (h *CardHandler) DeleteCard(args []string) error {
+func (h *TextHandler) UpdateText(args []string) error {
+	if len(args) < 3 {
+		return domain.ErrInvalidCommandUsage
+	}
+
+	id, err := strconv.Atoi(args[0])
+	if err != nil {
+		return domain.ErrInvalidCommandUsage
+	}
+
+	_, err = h.userStoredDataService.UpdateByID(
+		context.Background(),
+		id,
+		domain.TextData{
+			Text: strings.Join(args[2:], " "),
+		},
+		args[1],
+	)
+	if err != nil {
+		return err
+	}
+
+	if id >= 0 {
+		h.clientSession.AddEdited(id)
+	}
+
+	fmt.Println("Successfully update text data")
+
+	return nil
+}
+
+func (h *TextHandler) DeleteText(args []string) error {
 	if len(args) != 1 {
 		return domain.ErrInvalidCommandUsage
 	}
@@ -89,52 +106,7 @@ func (h *CardHandler) DeleteCard(args []string) error {
 	return nil
 }
 
-func (h *CardHandler) UpdateCard(args []string) error {
-	if len(args) < 5 {
-		return domain.ErrInvalidCommandUsage
-	}
-
-	id, err := strconv.Atoi(args[0])
-	if err != nil {
-		return domain.ErrInvalidCommandUsage
-	}
-
-	if !validators.ValidateCardNumber(args[1]) {
-		return domain.ErrInvalidCardNumber
-	}
-
-	if !validators.ValidateExpiredAt(args[2]) {
-		return domain.ErrInvalidCardExpiredAt
-	}
-
-	if !validators.ValidateCVV(args[3]) {
-		return domain.ErrInvalidCardCVV
-	}
-
-	_, err = h.userStoredDataService.UpdateByID(
-		context.Background(),
-		id,
-		domain.CardData{
-			Number:    args[1],
-			ExpiredAt: args[2],
-			CVV:       args[3],
-		},
-		args[4],
-	)
-	if err != nil {
-		return err
-	}
-
-	if id >= 0 {
-		h.clientSession.AddEdited(id)
-	}
-
-	fmt.Println("Successfully update card data")
-
-	return nil
-}
-
-func (h *CardHandler) GetCards(args []string) error {
+func (h *TextHandler) GetTexts(args []string) error {
 	count := 15
 	var page int
 	var err error
@@ -150,7 +122,7 @@ func (h *CardHandler) GetCards(args []string) error {
 
 	paginatedResult, err := h.userStoredDataService.GetUserData(
 		context.Background(),
-		domain.CardDataType,
+		domain.TextDataType,
 		&domain.StorageFilters{
 			IsPaginated:    true,
 			IsSortedByDate: true,
@@ -167,11 +139,11 @@ func (h *CardHandler) GetCards(args []string) error {
 		return err
 	}
 
-	fmt.Println("================== Cards ==================")
+	fmt.Println("================== Text ==================")
 
 	for _, data := range paginatedResult.Data.([]domain.UserStoredData) {
-		cardData := data.Data.(domain.CardData)
-		fmt.Println(fmt.Sprintf("ID: %d | %s %s %s | Meta: %s (version %d)", data.ID, cardData.Number, cardData.ExpiredAt, cardData.CVV, data.Meta, data.Version))
+		textData := data.Data.(domain.TextData)
+		fmt.Println(fmt.Sprintf("ID: %d | %s | Meta: %s (version %d)", data.ID, textData.Text, data.Meta, data.Version))
 	}
 
 	fmt.Println(

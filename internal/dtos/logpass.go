@@ -1,13 +1,14 @@
 package dtos
 
+import "github.com/MowlCoder/goph-keeper/internal/domain"
+
 type AddNewLogPassBody struct {
-	Login    string `json:"login"`
-	Password string `json:"password"`
-	Meta     string `json:"meta"`
+	Data domain.LogPassData `json:"data"`
+	Meta string             `json:"meta"`
 }
 
 func (b *AddNewLogPassBody) Valid() bool {
-	if b.Login == "" || b.Password == "" {
+	if b.Data.Login == "" || b.Data.Password == "" {
 		return false
 	}
 
@@ -18,14 +19,6 @@ func (b *AddNewLogPassBody) GetMeta() string {
 	return b.Meta
 }
 
-type DeleteBatchPairsBody struct {
-	IDs []int `json:"ids"`
-}
-
-func (b *DeleteBatchPairsBody) Valid() bool {
-	if len(b.IDs) == 0 {
-		return false
-	}
-
-	return true
+func (b *AddNewLogPassBody) GetData() interface{} {
+	return b.Data
 }

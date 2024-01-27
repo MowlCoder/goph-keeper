@@ -15,10 +15,12 @@ type cryptorForUserStoredDataService interface {
 }
 
 type userStoredDataRepository interface {
+	GetByID(ctx context.Context, id int) (*domain.UserStoredData, error)
 	AddData(ctx context.Context, userID int, dataType string, data []byte, meta string) (int64, error)
 	GetUserAllData(ctx context.Context, userID int) ([]domain.UserStoredData, error)
 	GetWithType(ctx context.Context, userID int, dataType string, filters *domain.StorageFilters) ([]domain.UserStoredData, error)
 	CountUserDataOfType(ctx context.Context, userID int, dataType string) (int, error)
+	UpdateUserData(ctx context.Context, userID int, dataID int, data interface{}, meta string) (*domain.UserStoredData, error)
 	DeleteBatch(ctx context.Context, userID int, id []int) error
 }
 
@@ -87,6 +89,52 @@ func (s *UserStoredDataService) GetUserData(ctx context.Context, userID int, dat
 		PageCount:   int(math.Ceil(float64(pairsCount) / float64(filters.Pagination.Count))),
 		Data:        dataSet,
 	}, nil
+}
+
+func (s *UserStoredDataService) GetUserDataByID(ctx context.Context, userID int, id int) (*domain.UserStoredData, error) {
+	userData, err := s.repository.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if userData.UserID != userID {
+		return nil, domain.ErrUserStoredDataNotFound
+	}
+
+	decryptedBytes, err := s.cryptor.DecryptBytes(userData.CryptedData)
+	if err != nil {
+		return nil, err
+	}
+	parsedData := make(map[string]interface{})
+	if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
+		return nil, err
+	}
+
+	userData.Data = parsedData
+
+	return userData, nil
+}
+
+func (s *UserStoredDataService) UpdateUserData(ctx context.Context, userID int, dataID int, data interface{}, meta string) (*domain.UserStoredData, error) {
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+
+	encrypted, err := s.cryptor.EncryptBytes(jsonData)
+	if err != nil {
+		return nil, err
+	}
+
+	newDate, err := s.repository.UpdateUserData(ctx, userID, dataID, encrypted, meta)
+	if err != nil {
+		return nil, err
+	}
+
+	newDate.Data = data
+	newDate.CryptedData = nil
+
+	return newDate, nil
 }
 
 func (s *UserStoredDataService) Add(ctx context.Context, userID int, dataType string, data interface{}, meta string) (*domain.UserStoredData, error) {

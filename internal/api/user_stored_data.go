@@ -68,8 +68,16 @@ func (api *UserStoredDataAPI) GetAll(ctx context.Context) ([]domain.UserStoredDa
 	return respBody, nil
 }
 
+type addBody struct {
+	Data interface{} `json:"data"`
+	Meta string      `json:"meta"`
+}
+
 func (api *UserStoredDataAPI) Add(ctx context.Context, entity domain.UserStoredData) (*domain.UserStoredData, error) {
-	body := entity.Data
+	body := &addBody{
+		Data: entity.Data,
+		Meta: entity.Meta,
+	}
 	b, _ := json.Marshal(body)
 
 	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/v1/data/%s", api.baseHTTPAddress, entity.DataType), bytes.NewReader(b))
@@ -107,8 +115,50 @@ func (api *UserStoredDataAPI) Add(ctx context.Context, entity domain.UserStoredD
 	return &respBody, nil
 }
 
+func (api *UserStoredDataAPI) UpdateByID(ctx context.Context, id int, data interface{}, meta string) (*domain.UserStoredData, error) {
+	body := &addBody{
+		Data: data,
+		Meta: meta,
+	}
+	b, _ := json.Marshal(body)
+
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("%s/api/v1/data/update/%d", api.baseHTTPAddress, id), bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+api.session.GetToken())
+
+	resp, err := api.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	respData, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var errResp httputils.HTTPError
+		if err := json.Unmarshal(respData, &errResp); err != nil {
+			return nil, err
+		}
+		return nil, errors.New("api error: " + errResp.Error)
+	}
+
+	var respBody domain.UserStoredData
+	if err := json.Unmarshal(respData, &respBody); err != nil {
+		return nil, err
+	}
+
+	return &respBody, nil
+}
+
 func (api *UserStoredDataAPI) DeleteBatch(ctx context.Context, ids []int) error {
-	body := &dtos.DeleteBatchCardsBody{
+	body := &dtos.DeleteBatchBody{
 		IDs: ids,
 	}
 	b, _ := json.Marshal(body)
