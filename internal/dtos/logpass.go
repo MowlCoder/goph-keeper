@@ -3,7 +3,7 @@ package dtos
 type AddNewLogPassBody struct {
 	Login    string `json:"login"`
 	Password string `json:"password"`
-	Source   string `json:"source"`
+	Meta     string `json:"meta"`
 }
 
 func (b *AddNewLogPassBody) Valid() bool {
@@ -12,6 +12,10 @@ func (b *AddNewLogPassBody) Valid() bool {
 	}
 
 	return true
+}
+
+func (b *AddNewLogPassBody) GetMeta() string {
+	return b.Meta
 }
 
 type DeleteBatchPairsBody struct {

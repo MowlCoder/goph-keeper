@@ -11,13 +11,13 @@ type Server struct {
 	HTTPAddr    string `env:"HTTP_ADDR" json:"http_addr"`
 	DatabaseDSN string `env:"DATABASE_DSN" json:"database_dsn"`
 
-	LogPassSecret string `env:"LOG_PASS_SECRET" json:"log_pass_secret"`
+	DataSecretKey string `env:"DATA_SECRET_KEY" json:"data_secret_key"`
 }
 
 func (s *Server) Parse() {
 	flag.StringVar(&s.HTTPAddr, "http", ":4000", "Server will listen this http address")
 	flag.StringVar(&s.DatabaseDSN, "dns", "", "Database connect uri")
-	flag.StringVar(&s.LogPassSecret, "lp-secret", "secretttsecretttsecretttsecrettt", "Secret for crypt log pass data")
+	flag.StringVar(&s.DataSecretKey, "data-secret", "secretttsecretttsecretttsecrettt", "Secret for crypt data")
 
 	flag.Parse()
 

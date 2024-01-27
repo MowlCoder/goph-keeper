@@ -15,6 +15,22 @@ func (b *AddNewCardBody) Valid() bool {
 	return true
 }
 
+func (b *AddNewCardBody) GetMeta() string {
+	return b.Meta
+}
+
+type DeleteBatchBody struct {
+	IDs []int `json:"ids"`
+}
+
+func (b *DeleteBatchBody) Valid() bool {
+	if len(b.IDs) == 0 {
+		return false
+	}
+
+	return true
+}
+
 type DeleteBatchCardsBody struct {
 	IDs []int `json:"ids"`
 }

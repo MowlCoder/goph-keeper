@@ -23,7 +23,7 @@ import (
 	"github.com/MowlCoder/goph-keeper/internal/config"
 	"github.com/MowlCoder/goph-keeper/internal/domain"
 	fileRepositories "github.com/MowlCoder/goph-keeper/internal/repositories/file"
-	"github.com/MowlCoder/goph-keeper/internal/services"
+	clientServices "github.com/MowlCoder/goph-keeper/internal/services/client"
 	"github.com/MowlCoder/goph-keeper/internal/session"
 	"github.com/MowlCoder/goph-keeper/internal/storage/file"
 	"github.com/MowlCoder/goph-keeper/internal/utils/cryptor"
@@ -33,8 +33,7 @@ var (
 	buildVersion string
 	buildDate    string
 
-	logPassSecret string
-	cardSecret    string
+	dataSecret string
 )
 
 func main() {
@@ -63,53 +62,37 @@ func main() {
 	}
 
 	clientSession := session.NewClientSession()
-	logPassApi := api.NewLogPassAPI(clientConfig.ServerBaseAddr, httpClient, clientSession)
-	cardApi := api.NewCardAPI(clientConfig.ServerBaseAddr, httpClient, clientSession)
+	userStoredDataAPI := api.NewUserStoredDataAPI(clientConfig.ServerBaseAddr, httpClient, clientSession)
 
-	logPassFileStorage, err := file.InitFileStorage(path.Join(appDataDirPath, "logpass.json"))
+	userStoredDataStorage, err := file.InitFileStorage(path.Join(appDataDirPath, "user_stored_data.json"))
 	if err != nil {
 		log.Println(err)
 		return
 	}
 
-	cardFileStorage, err := file.InitFileStorage(path.Join(appDataDirPath, "card.json"))
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	userStoredDataRepository := fileRepositories.NewUserStoredDataRepository(userStoredDataStorage)
 
-	logPassRepository := fileRepositories.NewLogPassRepository(logPassFileStorage)
-	cardRepository := fileRepositories.NewCardRepository(cardFileStorage)
+	dataCryptor := cryptor.New(dataSecret)
 
-	logPassCryptor := cryptor.New(logPassSecret)
-	cardCryptor := cryptor.New(cardSecret)
-
-	logPassService := services.NewLogPassService(logPassRepository, logPassCryptor)
-	cardService := services.NewCardService(cardRepository, cardCryptor)
+	userStoredDataService := clientServices.NewUserStoredDataService(userStoredDataRepository, dataCryptor)
 
 	userHandler := handlers.NewUserHandler(httpClient, clientSession)
-	logPassHandler := handlers.NewLogPassHandler(clientSession, logPassService)
-	cardHandler := handlers.NewCardHandler(clientSession, cardService)
+	logPassHandler := handlers.NewLogPassHandler(clientSession, userStoredDataService)
+	cardHandler := handlers.NewCardHandler(clientSession, userStoredDataService)
 
-	logPassSyncer := clientsync.NewLogPassSyncer(
+	dataSyncer := clientsync.NewBaseSyncer(
 		clientSession,
-		logPassApi,
-		logPassService,
-		logPassRepository,
-	)
-	cardSyncer := clientsync.NewCardSyncer(
-		clientSession,
-		cardApi,
-		cardService,
-		cardRepository,
+		userStoredDataAPI,
+		userStoredDataService,
+		userStoredDataRepository,
 	)
 
 	commandManager := commands.NewCommandManager()
 
-	registerSystemCommands(commandManager)
+	registerSystemCommands(commandManager, dataSyncer)
 	registerUserCommands(commandManager, userHandler)
-	registerLogPassCommands(commandManager, logPassHandler, logPassSyncer)
-	registerCardCommands(commandManager, cardHandler, cardSyncer)
+	registerLogPassCommands(commandManager, logPassHandler)
+	registerCardCommands(commandManager, cardHandler)
 
 	reader := bufio.NewReader(os.Stdin)
 
@@ -158,7 +141,7 @@ func main() {
 
 	fmt.Println("Saving data...")
 
-	if err := logPassSyncer.Sync(shutdownCtx); err != nil {
+	if err := dataSyncer.Sync(shutdownCtx); err != nil {
 		fmt.Println("Error when saving data -", err.Error())
 		return
 	}
@@ -168,6 +151,7 @@ func main() {
 
 func registerSystemCommands(
 	commandManager *commands.CommandManager,
+	dataSyncer *clientsync.BaseSyncer,
 ) {
 	commandManager.RegisterCommand(
 		"version",
@@ -181,6 +165,13 @@ func registerSystemCommands(
 			fmt.Println("==========================================")
 			return nil
 		},
+	)
+	commandManager.RegisterCommand(
+		"sync",
+		"synchronize your data with server",
+		"system",
+		"sync [need auth]",
+		dataSyncer.SyncCommandHandler,
 	)
 }
 
@@ -207,7 +198,6 @@ func registerUserCommands(
 func registerLogPassCommands(
 	commandManager *commands.CommandManager,
 	logPassHandler *handlers.LogPassHandler,
-	logPassSyncer *clientsync.BaseSyncer,
 ) {
 	commandManager.RegisterCommand(
 		"lp-save",
@@ -230,19 +220,11 @@ func registerLogPassCommands(
 		"lp-del <id:int>",
 		logPassHandler.DeletePair,
 	)
-	commandManager.RegisterCommand(
-		"lp-sync",
-		"synchronize login password pairs with server",
-		"login password",
-		"lp-sync [need auth]",
-		logPassSyncer.SyncCommandHandler,
-	)
 }
 
 func registerCardCommands(
 	commandManager *commands.CommandManager,
 	cardHandler *handlers.CardHandler,
-	cardSyncer *clientsync.BaseSyncer,
 ) {
 	commandManager.RegisterCommand(
 		"card-save",
@@ -264,12 +246,5 @@ func registerCardCommands(
 		"card",
 		"card-del <id:int>",
 		cardHandler.DeleteCard,
-	)
-	commandManager.RegisterCommand(
-		"card-sync",
-		"synchronize cards with server",
-		"card",
-		"card-sync [need auth]",
-		cardSyncer.SyncCommandHandler,
 	)
 }

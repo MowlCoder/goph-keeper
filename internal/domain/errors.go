@@ -11,6 +11,8 @@ var (
 	ErrNotAuth           = errors.New("not authorized")
 	ErrInternal          = errors.New("internal error")
 
+	ErrInvalidDataType = errors.New("invalid data type")
+
 	ErrInvalidCardNumber    = errors.New("invalid card number")
 	ErrInvalidCardExpiredAt = errors.New("invalid card expired at (e.g. 4/30)")
 	ErrInvalidCardCVV       = errors.New("invalid card cvv)")

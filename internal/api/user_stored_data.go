@@ -15,30 +15,26 @@ import (
 	"github.com/MowlCoder/goph-keeper/pkg/httputils"
 )
 
-type LogPassAPI struct {
+type UserStoredDataAPI struct {
 	baseHTTPAddress string
 	httpClient      *http.Client
 	session         *session.ClientSession
 }
 
-func NewLogPassAPI(
+func NewUserStoredDataAPI(
 	baseHTTPAddress string,
 	httpClient *http.Client,
 	session *session.ClientSession,
-) *LogPassAPI {
-	return &LogPassAPI{
+) *UserStoredDataAPI {
+	return &UserStoredDataAPI{
 		baseHTTPAddress: baseHTTPAddress,
 		httpClient:      httpClient,
 		session:         session,
 	}
 }
 
-type getUserPairsResponse struct {
-	Data []domain.LogPass
-}
-
-func (api *LogPassAPI) GetUserPairs(ctx context.Context) ([]domain.LogPass, error) {
-	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/logpass", api.baseHTTPAddress), nil)
+func (api *UserStoredDataAPI) GetAll(ctx context.Context) ([]domain.UserStoredData, error) {
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/data", api.baseHTTPAddress), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -64,28 +60,19 @@ func (api *LogPassAPI) GetUserPairs(ctx context.Context) ([]domain.LogPass, erro
 		return nil, errors.New(errResp.Error)
 	}
 
-	var respBody getUserPairsResponse
+	var respBody []domain.UserStoredData
 	if err := json.Unmarshal(data, &respBody); err != nil {
 		return nil, err
 	}
 
-	return respBody.Data, nil
+	return respBody, nil
 }
 
-func (api *LogPassAPI) AddNewPair(
-	ctx context.Context,
-	login string,
-	password string,
-	source string,
-) (*domain.LogPass, error) {
-	body := &dtos.AddNewLogPassBody{
-		Login:    login,
-		Password: password,
-		Source:   source,
-	}
+func (api *UserStoredDataAPI) Add(ctx context.Context, entity domain.UserStoredData) (*domain.UserStoredData, error) {
+	body := entity.Data
 	b, _ := json.Marshal(body)
 
-	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/v1/logpass", api.baseHTTPAddress), bytes.NewReader(b))
+	req, err := http.NewRequest(http.MethodPost, fmt.Sprintf("%s/api/v1/data/%s", api.baseHTTPAddress, entity.DataType), bytes.NewReader(b))
 	if err != nil {
 		return nil, err
 	}
@@ -109,10 +96,10 @@ func (api *LogPassAPI) AddNewPair(
 		if err := json.Unmarshal(data, &errResp); err != nil {
 			return nil, err
 		}
-		return nil, errors.New(errResp.Error)
+		return nil, errors.New("api error: " + errResp.Error)
 	}
 
-	var respBody domain.LogPass
+	var respBody domain.UserStoredData
 	if err := json.Unmarshal(data, &respBody); err != nil {
 		return nil, err
 	}
@@ -120,16 +107,13 @@ func (api *LogPassAPI) AddNewPair(
 	return &respBody, nil
 }
 
-func (api *LogPassAPI) DeleteBatchPairs(
-	ctx context.Context,
-	ids []int,
-) error {
-	body := &dtos.DeleteBatchPairsBody{
+func (api *UserStoredDataAPI) DeleteBatch(ctx context.Context, ids []int) error {
+	body := &dtos.DeleteBatchCardsBody{
 		IDs: ids,
 	}
 	b, _ := json.Marshal(body)
 
-	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/api/v1/logpass", api.baseHTTPAddress), bytes.NewReader(b))
+	req, err := http.NewRequest(http.MethodDelete, fmt.Sprintf("%s/api/v1/data", api.baseHTTPAddress), bytes.NewReader(b))
 	if err != nil {
 		return err
 	}

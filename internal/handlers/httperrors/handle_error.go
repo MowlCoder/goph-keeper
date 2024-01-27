@@ -29,6 +29,10 @@ var errorToErrorInfo = map[error]errorInfo{
 		statusCode: http.StatusBadRequest,
 		errorCode:  4,
 	},
+	domain.ErrInvalidDataType: {
+		statusCode: http.StatusBadRequest,
+		errorCode:  5,
+	},
 	domain.ErrNotAuth: {
 		statusCode: http.StatusUnauthorized,
 		errorCode:  401,

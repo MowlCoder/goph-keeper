@@ -6,28 +6,22 @@ import (
 	"strconv"
 
 	"github.com/MowlCoder/goph-keeper/internal/domain"
+	"github.com/MowlCoder/goph-keeper/internal/dtos"
 	"github.com/MowlCoder/goph-keeper/internal/session"
 )
 
-type logPassService interface {
-	GetUserPairs(ctx context.Context, userID int, filters *domain.StorageFilters, needToDecrypt bool) (*domain.PaginatedResult, error)
-	AddNewPair(ctx context.Context, needEncrypt bool, userID int, login string, password string, source string) (*domain.LogPass, error)
-	DeletePairByID(ctx context.Context, userID int, id int) error
-}
-
 type LogPassHandler struct {
-	clientSession *session.ClientSession
-
-	logPassService logPassService
+	clientSession         *session.ClientSession
+	userStoredDataService userStoredDataService
 }
 
 func NewLogPassHandler(
 	clientSession *session.ClientSession,
-	logPassService logPassService,
+	userStoredDataService userStoredDataService,
 ) *LogPassHandler {
 	return &LogPassHandler{
-		clientSession:  clientSession,
-		logPassService: logPassService,
+		clientSession:         clientSession,
+		userStoredDataService: userStoredDataService,
 	}
 }
 
@@ -36,12 +30,14 @@ func (h *LogPassHandler) AddPair(args []string) error {
 		return domain.ErrInvalidCommandUsage
 	}
 
-	_, err := h.logPassService.AddNewPair(
+	_, err := h.userStoredDataService.Add(
 		context.Background(),
-		true,
-		domain.LocalUserID,
-		args[0],
-		args[1],
+		domain.LogPassDataType,
+		&dtos.AddNewLogPassBody{
+			Login:    args[0],
+			Password: args[1],
+			Meta:     args[2],
+		},
 		args[2],
 	)
 	if err != nil {
@@ -63,9 +59,8 @@ func (h *LogPassHandler) DeletePair(args []string) error {
 		return domain.ErrInvalidCommandUsage
 	}
 
-	err = h.logPassService.DeletePairByID(
+	err = h.userStoredDataService.DeleteByID(
 		context.Background(),
-		domain.LocalUserID,
 		id,
 	)
 	if err != nil {
@@ -95,9 +90,9 @@ func (h *LogPassHandler) GetPairs(args []string) error {
 		page = 1
 	}
 
-	paginatedResult, err := h.logPassService.GetUserPairs(
+	paginatedResult, err := h.userStoredDataService.GetUserData(
 		context.Background(),
-		domain.LocalUserID,
+		domain.LogPassDataType,
 		&domain.StorageFilters{
 			IsPaginated:    true,
 			IsSortedByDate: true,
@@ -109,7 +104,6 @@ func (h *LogPassHandler) GetPairs(args []string) error {
 				IsASC: false,
 			},
 		},
-		true,
 	)
 	if err != nil {
 		return err
@@ -117,8 +111,9 @@ func (h *LogPassHandler) GetPairs(args []string) error {
 
 	fmt.Println("================== Log Pass ==================")
 
-	for _, pair := range paginatedResult.Data.([]domain.LogPass) {
-		fmt.Println(fmt.Sprintf("ID: %d | %s:%s | Source: %s (version %d)", pair.ID, pair.Login, pair.Password, pair.Source, pair.Version))
+	for _, data := range paginatedResult.Data.([]domain.UserStoredData) {
+		logPassData := data.Data.(domain.LogPassData)
+		fmt.Println(fmt.Sprintf("ID: %d | %s:%s | Source: %s (version %d)", data.ID, logPassData.Login, logPassData.Password, data.Meta, data.Version))
 	}
 
 	fmt.Println(

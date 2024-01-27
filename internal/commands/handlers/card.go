@@ -10,25 +10,19 @@ import (
 	"github.com/MowlCoder/goph-keeper/internal/validators"
 )
 
-type cardService interface {
-	GetUserCards(ctx context.Context, userID int, filters *domain.StorageFilters) (*domain.PaginatedResult, error)
-	AddNewCard(ctx context.Context, needEncrypt bool, userID int, number string, expiredAt string, cvv string, meta string) (*domain.Card, error)
-	DeleteCardByID(ctx context.Context, userID int, id int) error
-}
-
 type CardHandler struct {
 	clientSession *session.ClientSession
 
-	cardService cardService
+	userStoredDataService userStoredDataService
 }
 
 func NewCardHandler(
 	clientSession *session.ClientSession,
-	cardService cardService,
+	userStoredDataService userStoredDataService,
 ) *CardHandler {
 	return &CardHandler{
-		clientSession: clientSession,
-		cardService:   cardService,
+		clientSession:         clientSession,
+		userStoredDataService: userStoredDataService,
 	}
 }
 
@@ -49,13 +43,14 @@ func (h *CardHandler) AddCard(args []string) error {
 		return domain.ErrInvalidCardCVV
 	}
 
-	_, err := h.cardService.AddNewCard(
+	_, err := h.userStoredDataService.Add(
 		context.Background(),
-		true,
-		domain.LocalUserID,
-		args[0],
-		args[1],
-		args[2],
+		domain.CardDataType,
+		domain.CardData{
+			Number:    args[0],
+			ExpiredAt: args[1],
+			CVV:       args[2],
+		},
 		args[3],
 	)
 	if err != nil {
@@ -77,9 +72,8 @@ func (h *CardHandler) DeleteCard(args []string) error {
 		return domain.ErrInvalidCommandUsage
 	}
 
-	err = h.cardService.DeleteCardByID(
+	err = h.userStoredDataService.DeleteByID(
 		context.Background(),
-		domain.LocalUserID,
 		id,
 	)
 	if err != nil {
@@ -109,9 +103,9 @@ func (h *CardHandler) GetCards(args []string) error {
 		page = 1
 	}
 
-	paginatedResult, err := h.cardService.GetUserCards(
+	paginatedResult, err := h.userStoredDataService.GetUserData(
 		context.Background(),
-		domain.LocalUserID,
+		domain.CardDataType,
 		&domain.StorageFilters{
 			IsPaginated:    true,
 			IsSortedByDate: true,
@@ -130,8 +124,9 @@ func (h *CardHandler) GetCards(args []string) error {
 
 	fmt.Println("================== Cards ==================")
 
-	for _, card := range paginatedResult.Data.([]domain.Card) {
-		fmt.Println(fmt.Sprintf("ID: %d | %s %s %s | Meta: %s (version %d)", card.ID, card.Number, card.ExpiredAt, card.CVV, card.Meta, card.Version))
+	for _, data := range paginatedResult.Data.([]domain.UserStoredData) {
+		cardData := data.Data.(domain.CardData)
+		fmt.Println(fmt.Sprintf("ID: %d | %s %s %s | Meta: %s (version %d)", data.ID, cardData.Number, cardData.ExpiredAt, cardData.CVV, data.Meta, data.Version))
 	}
 
 	fmt.Println(

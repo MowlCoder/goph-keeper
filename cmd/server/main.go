@@ -16,7 +16,7 @@ import (
 	"github.com/MowlCoder/goph-keeper/internal/handlers"
 	"github.com/MowlCoder/goph-keeper/internal/middleware"
 	dbRepositories "github.com/MowlCoder/goph-keeper/internal/repositories/postgresql"
-	"github.com/MowlCoder/goph-keeper/internal/services"
+	serverServices "github.com/MowlCoder/goph-keeper/internal/services/server"
 	"github.com/MowlCoder/goph-keeper/internal/storage/postgresql"
 	"github.com/MowlCoder/goph-keeper/internal/utils/cryptor"
 	"github.com/MowlCoder/goph-keeper/internal/utils/password"
@@ -45,33 +45,29 @@ func main() {
 	passwordHasher := password.NewHasher()
 	tokenGenerator := token.NewGenerator()
 	tokenParser := token.NewParser()
-	logPassCryptor := cryptor.New(serverConfig.LogPassSecret)
-	cardCryptor := cryptor.New(serverConfig.LogPassSecret)
+
+	dataCryptor := cryptor.New(serverConfig.DataSecretKey)
 
 	authMiddleware := middleware.NewAuthMiddleware(tokenParser)
 
 	userRepository := dbRepositories.NewUserRepository(dbPool)
-	logPassRepository := dbRepositories.NewLogPassRepository(dbPool)
-	cardRepository := dbRepositories.NewCardRepository(dbPool)
+	userStoredDataRepository := dbRepositories.NewUserStoredDataRepository(dbPool)
 
-	userService := services.NewUserService(
+	userService := serverServices.NewUserService(
 		userRepository,
 		passwordHasher,
 	)
-	logPassService := services.NewLogPassService(logPassRepository, logPassCryptor)
-	cardService := services.NewCardService(cardRepository, cardCryptor)
+	userStoredDataService := serverServices.NewUserStoredDataService(userStoredDataRepository, dataCryptor)
 
 	userHandler := handlers.NewUserHandler(userService, tokenGenerator)
-	logPassHandler := handlers.NewLogPassHandler(logPassService)
-	cardsHandler := handlers.NewCardHandler(cardService)
+	userStoredDataHandler := handlers.NewUserStoredDataHandler(userStoredDataService)
 
 	server := &http.Server{
 		Addr: serverConfig.HTTPAddr,
 		Handler: makeHTTPRouter(
 			authMiddleware,
 			userHandler,
-			logPassHandler,
-			cardsHandler,
+			userStoredDataHandler,
 		),
 	}
 
@@ -113,8 +109,7 @@ func makeHTTPRouter(
 	authMiddleware *middleware.AuthMiddleware,
 
 	userHandler *handlers.UserHandler,
-	logPassHandler *handlers.LogPassHandler,
-	cardsHandler *handlers.CardHandler,
+	userStoredDataHandler *handlers.UserStoredDataHandler,
 ) http.Handler {
 	router := chi.NewRouter()
 
@@ -124,18 +119,12 @@ func makeHTTPRouter(
 			userRouter.Post("/authorize", userHandler.Authorize)
 		})
 
-		apiRouter.Route("/logpass", func(logPassRouter chi.Router) {
-			logPassRouter.Use(authMiddleware.Middleware)
-			logPassRouter.Post("/", logPassHandler.AddNewPair)
-			logPassRouter.Get("/", logPassHandler.GetMyPairs)
-			logPassRouter.Delete("/", logPassHandler.DeleteBatchPairs)
-		})
-
-		apiRouter.Route("/cards", func(cardsRouter chi.Router) {
-			cardsRouter.Use(authMiddleware.Middleware)
-			cardsRouter.Post("/", cardsHandler.AddNewCard)
-			cardsRouter.Get("/", cardsHandler.GetMyCards)
-			cardsRouter.Delete("/", cardsHandler.DeleteBatchCards)
+		apiRouter.Route("/data", func(dataRouter chi.Router) {
+			dataRouter.Use(authMiddleware.Middleware)
+			dataRouter.Get("/{type}", userStoredDataHandler.GetOfType)
+			dataRouter.Post("/{type}", userStoredDataHandler.Add)
+			dataRouter.Get("/", userStoredDataHandler.GetUserAll)
+			dataRouter.Delete("/", userStoredDataHandler.DeleteBatch)
 		})
 	})
 

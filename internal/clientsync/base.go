@@ -8,30 +8,24 @@ import (
 	"github.com/MowlCoder/goph-keeper/internal/session"
 )
 
-type entity interface {
-	GetID() int
-	GetVersion() int
-	IsLocal() bool
-}
-
 type serverApi interface {
-	GetUserData(ctx context.Context) ([]entity, error)
-	AddNewData(ctx context.Context, entity entity) (entity, error)
-	DeleteBatchData(ctx context.Context, ids []int) error
+	GetAll(ctx context.Context) ([]domain.UserStoredData, error)
+	Add(ctx context.Context, entity domain.UserStoredData) (*domain.UserStoredData, error)
+	DeleteBatch(ctx context.Context, ids []int) error
 }
 
 type localService interface {
-	GetAllUserData(ctx context.Context, userID int) ([]entity, error)
-	AddNewData(ctx context.Context, userID int, entity entity) (entity, error)
-	DeleteBatchData(ctx context.Context, userID int, ids []int) error
+	GetAll(ctx context.Context) ([]domain.UserStoredData, error)
+	Add(ctx context.Context, dataType string, data interface{}, meta string) (*domain.UserStoredData, error)
+	DeleteBatch(ctx context.Context, ids []int) error
 }
 
 type preparedData struct {
 	DelFromServer []int
 	DelFromClient []int
 
-	AddToServer []entity
-	AddToClient []entity
+	AddToServer []domain.UserStoredData
+	AddToClient []domain.UserStoredData
 }
 
 type localRepository interface {
@@ -46,7 +40,7 @@ type BaseSyncer struct {
 	localRepository localRepository
 }
 
-func newBaseSyncer(
+func NewBaseSyncer(
 	clientSession *session.ClientSession,
 	serverApi serverApi,
 	localService localService,
@@ -66,63 +60,64 @@ func (s *BaseSyncer) Sync(ctx context.Context) error {
 		return nil
 	}
 
-	serverPairsMap, err := s.getServerPairs(ctx)
+	serverDataMap, err := s.getServerData(ctx)
 	if err != nil {
 		return err
 	}
-	clientPairsMap, err := s.getClientPairs(ctx)
+	clientDataMap, err := s.getClientData(ctx)
 	if err != nil {
 		return err
 	}
 
-	data := s.prepareData(serverPairsMap, clientPairsMap)
+	data := s.prepareData(serverDataMap, clientDataMap)
 
 	if len(data.DelFromClient) > 0 {
-		if err := s.localService.DeleteBatchData(ctx, domain.LocalUserID, data.DelFromClient); err != nil {
+		if err := s.localService.DeleteBatch(ctx, data.DelFromClient); err != nil {
 			return err
 		}
 	}
 
 	if len(data.DelFromServer) > 0 {
-		err := s.serverApi.DeleteBatchData(ctx, data.DelFromServer)
+		err := s.serverApi.DeleteBatch(ctx, data.DelFromServer)
 		if err != nil {
 			return err
 		}
 	}
 
 	if len(data.AddToServer) > 0 {
-		for _, pair := range data.AddToServer {
-			newLogPass, err := s.serverApi.AddNewData(
+		for _, data := range data.AddToServer {
+			newData, err := s.serverApi.Add(
 				ctx,
-				pair,
+				data,
 			)
 			if err != nil {
-				fmt.Println(err)
+				fmt.Println("AddToServer:", err)
 				continue
 			}
 
 			s.localRepository.SyncUpdate(
 				context.Background(),
-				pair.GetID(),
-				newLogPass.GetID(),
-				newLogPass.GetVersion(),
+				data.ID,
+				newData.ID,
+				newData.Version,
 			)
 		}
 	}
 
 	if len(data.AddToClient) > 0 {
-		for _, pair := range data.AddToClient {
-			newPair, _ := s.localService.AddNewData(
+		for _, d := range data.AddToClient {
+			newData, _ := s.localService.Add(
 				ctx,
-				domain.LocalUserID,
-				pair,
+				d.DataType,
+				d.Data,
+				d.Meta,
 			)
 
 			s.localRepository.SyncUpdate(
 				ctx,
-				newPair.GetID(),
-				pair.GetID(),
-				pair.GetVersion(),
+				newData.ID,
+				d.ID,
+				d.Version,
 			)
 		}
 	}
@@ -140,34 +135,34 @@ func (s *BaseSyncer) SyncCommandHandler(args []string) error {
 	return s.Sync(context.Background())
 }
 
-func (s *BaseSyncer) prepareData(serverData map[int]entity, clientData map[int]entity) *preparedData {
+func (s *BaseSyncer) prepareData(serverData map[int]domain.UserStoredData, clientData map[int]domain.UserStoredData) *preparedData {
 	pd := &preparedData{
 		DelFromServer: make([]int, 0),
 		DelFromClient: make([]int, 0),
 
-		AddToServer: make([]entity, 0),
-		AddToClient: make([]entity, 0),
+		AddToServer: make([]domain.UserStoredData, 0),
+		AddToClient: make([]domain.UserStoredData, 0),
 	}
 
-	for _, serverPair := range serverData {
-		if s.clientSession.IsLogPassDeleted(serverPair.GetID()) {
-			pd.DelFromServer = append(pd.DelFromServer, serverPair.GetID())
+	for _, data := range serverData {
+		if s.clientSession.IsLogPassDeleted(data.ID) {
+			pd.DelFromServer = append(pd.DelFromServer, data.ID)
 			continue
 		}
 
-		if _, ok := clientData[serverPair.GetID()]; !ok {
-			pd.AddToClient = append(pd.AddToClient, serverPair)
+		if _, ok := clientData[data.ID]; !ok {
+			pd.AddToClient = append(pd.AddToClient, data)
 		}
 	}
 
-	for _, clientPair := range clientData {
-		_, ok := serverData[clientPair.GetID()]
+	for _, data := range clientData {
+		_, ok := serverData[data.ID]
 
 		if !ok {
-			if clientPair.IsLocal() {
-				pd.AddToServer = append(pd.AddToServer, clientPair)
+			if data.IsLocal() {
+				pd.AddToServer = append(pd.AddToServer, data)
 			} else {
-				pd.DelFromClient = append(pd.DelFromClient, clientPair.GetID())
+				pd.DelFromClient = append(pd.DelFromClient, data.ID)
 			}
 		}
 	}
@@ -175,31 +170,31 @@ func (s *BaseSyncer) prepareData(serverData map[int]entity, clientData map[int]e
 	return pd
 }
 
-func (s *BaseSyncer) getServerPairs(ctx context.Context) (map[int]entity, error) {
-	serverData, err := s.serverApi.GetUserData(ctx)
+func (s *BaseSyncer) getServerData(ctx context.Context) (map[int]domain.UserStoredData, error) {
+	serverData, err := s.serverApi.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	serverPairsMap := make(map[int]entity)
-	for _, serverPair := range serverData {
-		serverPairsMap[serverPair.GetID()] = serverPair
+	serverDataMap := make(map[int]domain.UserStoredData)
+	for _, data := range serverData {
+		serverDataMap[data.ID] = data
 	}
 
-	return serverPairsMap, nil
+	return serverDataMap, nil
 }
 
-func (s *BaseSyncer) getClientPairs(ctx context.Context) (map[int]entity, error) {
-	clientPairs, err := s.localService.GetAllUserData(ctx, domain.LocalUserID)
+func (s *BaseSyncer) getClientData(ctx context.Context) (map[int]domain.UserStoredData, error) {
+	dataSet, err := s.localService.GetAll(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	clientPairsMap := make(map[int]entity)
+	clientData := make(map[int]domain.UserStoredData)
 
-	for _, clientPair := range clientPairs {
-		clientPairsMap[clientPair.GetID()] = clientPair
+	for _, data := range dataSet {
+		clientData[data.ID] = data
 	}
 
-	return clientPairsMap, nil
+	return clientData, nil
 }
