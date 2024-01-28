@@ -1,6 +1,9 @@
 package domain
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 const (
 	LogPassDataType = "logpass"
@@ -49,4 +52,39 @@ type AddUserStoredDataBody interface {
 	Valid() bool
 	GetData() interface{}
 	GetMeta() string
+}
+
+func ParseUserStoredData(dataType string, data []byte) (interface{}, error) {
+	switch dataType {
+	case LogPassDataType:
+		var parsedData LogPassData
+		if err := json.Unmarshal(data, &parsedData); err != nil {
+			return nil, err
+		}
+
+		return parsedData, nil
+	case CardDataType:
+		var parsedData CardData
+		if err := json.Unmarshal(data, &parsedData); err != nil {
+			return nil, err
+		}
+
+		return parsedData, nil
+	case TextDataType:
+		var parsedData TextData
+		if err := json.Unmarshal(data, &parsedData); err != nil {
+			return nil, err
+		}
+
+		return parsedData, nil
+	case FileDataType:
+		var parsedData FileData
+		if err := json.Unmarshal(data, &parsedData); err != nil {
+			return nil, err
+		}
+
+		return parsedData, nil
+	default:
+		return nil, ErrInvalidDataType
+	}
 }

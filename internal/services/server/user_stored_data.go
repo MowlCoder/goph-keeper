@@ -47,8 +47,8 @@ func (s *UserStoredDataService) GetAllUserData(ctx context.Context, userID int) 
 		if err != nil {
 			return nil, err
 		}
-		parsedData := make(map[string]interface{})
-		if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
+		parsedData, err := domain.ParseUserStoredData(data.DataType, decryptedBytes)
+		if err != nil {
 			return nil, err
 		}
 
@@ -74,8 +74,8 @@ func (s *UserStoredDataService) GetUserData(ctx context.Context, userID int, dat
 		if err != nil {
 			return nil, err
 		}
-		parsedData := make(map[string]interface{})
-		if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
+		parsedData, err := domain.ParseUserStoredData(data.DataType, decryptedBytes)
+		if err != nil {
 			return nil, err
 		}
 
@@ -105,8 +105,8 @@ func (s *UserStoredDataService) GetUserDataByID(ctx context.Context, userID int,
 	if err != nil {
 		return nil, err
 	}
-	parsedData := make(map[string]interface{})
-	if err := json.Unmarshal(decryptedBytes, &parsedData); err != nil {
+	parsedData, err := domain.ParseUserStoredData(userData.DataType, decryptedBytes)
+	if err != nil {
 		return nil, err
 	}
 

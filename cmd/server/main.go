@@ -127,7 +127,6 @@ func makeHTTPRouter(
 
 		apiRouter.Route("/data", func(dataRouter chi.Router) {
 			dataRouter.Use(authMiddleware.Middleware)
-			dataRouter.Put("/update", userStoredDataHandler.Update)
 			dataRouter.Put("/update/{id}", userStoredDataHandler.UpdateOne)
 			dataRouter.Get("/{type}", userStoredDataHandler.GetOfType)
 			dataRouter.Post("/{type}", userStoredDataHandler.Add)

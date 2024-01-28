@@ -33,6 +33,16 @@ build-client:
 run-client: build-client
 	$(client_binary_path)
 
+test:
+	go test ./...
+
+mocks:
+	mockgen -source=./internal/services/client/user_stored_data.go -destination=./internal/services/client/mocks/user_stored_data.go
+	mockgen -source=./internal/services/server/user_stored_data.go -destination=./internal/services/server/mocks/user_stored_data.go
+	mockgen -source=./internal/services/server/user.go -destination=./internal/services/server/mocks/user.go
+	mockgen -source="./internal/handlers/user.go" -destination="./internal/handlers/mocks/user.go"
+	mockgen -source="./internal/handlers/user_stored_data.go" -destination="./internal/handlers/mocks/user_stored_data.go"
+
 fmt:
 	gofmt -s -w .
 	goimports -w .

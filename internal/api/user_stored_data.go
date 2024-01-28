@@ -65,6 +65,13 @@ func (api *UserStoredDataAPI) GetAll(ctx context.Context) ([]domain.UserStoredDa
 		return nil, err
 	}
 
+	for idx, data := range respBody {
+		respBody[idx].Data, err = api.parseData(data)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return respBody, nil
 }
 
@@ -191,4 +198,13 @@ func (api *UserStoredDataAPI) DeleteBatch(ctx context.Context, ids []int) error 
 	}
 
 	return nil
+}
+
+func (api *UserStoredDataAPI) parseData(userData domain.UserStoredData) (interface{}, error) {
+	jsonData, err := json.Marshal(userData.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	return domain.ParseUserStoredData(userData.DataType, jsonData)
 }

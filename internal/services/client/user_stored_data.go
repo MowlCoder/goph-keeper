@@ -48,7 +48,7 @@ func (s *UserStoredDataService) GetByID(ctx context.Context, id int) (*domain.Us
 		return nil, err
 	}
 
-	data.Data, err = s.parseData(data.DataType, decryptedBytes)
+	data.Data, err = domain.ParseUserStoredData(data.DataType, decryptedBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *UserStoredDataService) GetAll(ctx context.Context) ([]domain.UserStored
 			return nil, err
 		}
 
-		dataSet[idx].Data, err = s.parseData(data.DataType, decryptedBytes)
+		dataSet[idx].Data, err = domain.ParseUserStoredData(data.DataType, decryptedBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -93,7 +93,7 @@ func (s *UserStoredDataService) GetUserData(ctx context.Context, dataType string
 			return nil, err
 		}
 
-		dataSet[idx].Data, err = s.parseData(data.DataType, decryptedBytes)
+		dataSet[idx].Data, err = domain.ParseUserStoredData(data.DataType, decryptedBytes)
 		if err != nil {
 			return nil, err
 		}
@@ -161,39 +161,4 @@ func (s *UserStoredDataService) DeleteBatch(ctx context.Context, ids []int) erro
 
 func (s *UserStoredDataService) DeleteByID(ctx context.Context, id int) error {
 	return s.repository.DeleteByID(ctx, id)
-}
-
-func (s *UserStoredDataService) parseData(dataType string, data []byte) (interface{}, error) {
-	switch dataType {
-	case domain.LogPassDataType:
-		var parsedData domain.LogPassData
-		if err := json.Unmarshal(data, &parsedData); err != nil {
-			return nil, err
-		}
-
-		return parsedData, nil
-	case domain.CardDataType:
-		var parsedData domain.CardData
-		if err := json.Unmarshal(data, &parsedData); err != nil {
-			return nil, err
-		}
-
-		return parsedData, nil
-	case domain.TextDataType:
-		var parsedData domain.TextData
-		if err := json.Unmarshal(data, &parsedData); err != nil {
-			return nil, err
-		}
-
-		return parsedData, nil
-	case domain.FileDataType:
-		var parsedData domain.FileData
-		if err := json.Unmarshal(data, &parsedData); err != nil {
-			return nil, err
-		}
-
-		return parsedData, nil
-	default:
-		return nil, domain.ErrInvalidDataType
-	}
 }

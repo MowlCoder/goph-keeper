@@ -114,8 +114,6 @@ func (h *UserStoredDataHandler) Add(w http.ResponseWriter, r *http.Request) {
 	httputils.SendJSONResponse(w, http.StatusCreated, data)
 }
 
-func (h *UserStoredDataHandler) Update(w http.ResponseWriter, r *http.Request) {}
-
 func (h *UserStoredDataHandler) UpdateOne(w http.ResponseWriter, r *http.Request) {
 	userID, err := usercontext.GetUserIDFromContext(r.Context())
 	if err != nil {

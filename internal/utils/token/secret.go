@@ -2,11 +2,16 @@ package token
 
 import "os"
 
+const (
+	jwtSecretEnvKey  = "JWT_SECRET"
+	defaultSecretVal = "secret"
+)
+
 func getTokenSecretKey() []byte {
-	key, ok := os.LookupEnv("JWT_SECRET")
+	key, ok := os.LookupEnv(jwtSecretEnvKey)
 
 	if !ok {
-		return []byte("secret")
+		return []byte(defaultSecretVal)
 	}
 
 	return []byte(key)
