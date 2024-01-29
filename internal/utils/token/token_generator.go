@@ -9,13 +9,16 @@ import (
 	"github.com/MowlCoder/goph-keeper/internal/domain"
 )
 
+// Generator - struct responsible for generate JWT tokens
 type Generator struct {
 }
 
+// NewGenerator - constructor for Generator struct
 func NewGenerator() *Generator {
 	return &Generator{}
 }
 
+// Generate - generate JWT token from domain.User struct
 func (g *Generator) Generate(ctx context.Context, user domain.User) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, domain.TokenClaim{
 		ID: user.ID,

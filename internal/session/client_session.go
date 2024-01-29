@@ -8,6 +8,7 @@ import (
 	"sync"
 )
 
+// ClientSession - struct responsible for keeping client session state
 type ClientSession struct {
 	mu   *sync.RWMutex
 	file *os.File
@@ -17,6 +18,7 @@ type ClientSession struct {
 	EditedIDs  map[int]struct{} `json:"edited_ids"`
 }
 
+// NewClientSession - constructor for ClientSession struct
 func NewClientSession(file *os.File) *ClientSession {
 	session := &ClientSession{
 		mu: &sync.RWMutex{},
@@ -38,6 +40,7 @@ func NewClientSession(file *os.File) *ClientSession {
 	return session
 }
 
+// SetToken - save user token in session state
 func (s *ClientSession) SetToken(token string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -45,6 +48,7 @@ func (s *ClientSession) SetToken(token string) {
 	s.Token = token
 }
 
+// IsAuth - check if user already authorized
 func (s *ClientSession) IsAuth() bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -52,6 +56,7 @@ func (s *ClientSession) IsAuth() bool {
 	return s.Token != ""
 }
 
+// GetToken - get user token from session state
 func (s *ClientSession) GetToken() string {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -59,6 +64,7 @@ func (s *ClientSession) GetToken() string {
 	return s.Token
 }
 
+// AddDeleted - add id of deleted record in session state
 func (s *ClientSession) AddDeleted(id int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -67,6 +73,7 @@ func (s *ClientSession) AddDeleted(id int) error {
 	return s.SaveInFile()
 }
 
+// IsDeleted - check if record with given id was deleted
 func (s *ClientSession) IsDeleted(id int) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -75,6 +82,7 @@ func (s *ClientSession) IsDeleted(id int) bool {
 	return ok
 }
 
+// ClearDeleted - clear deleted record ids from session state
 func (s *ClientSession) ClearDeleted() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -83,6 +91,7 @@ func (s *ClientSession) ClearDeleted() error {
 	return s.SaveInFile()
 }
 
+// AddEdited - add id of edited record in session state
 func (s *ClientSession) AddEdited(id int) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -91,6 +100,7 @@ func (s *ClientSession) AddEdited(id int) error {
 	return s.SaveInFile()
 }
 
+// IsEdited - check if record with given id was edited
 func (s *ClientSession) IsEdited(id int) bool {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -99,6 +109,7 @@ func (s *ClientSession) IsEdited(id int) bool {
 	return ok
 }
 
+// ClearEdited - clear edited record ids from session state
 func (s *ClientSession) ClearEdited() error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -107,6 +118,7 @@ func (s *ClientSession) ClearEdited() error {
 	return s.SaveInFile()
 }
 
+// SaveInFile - save session state in file
 func (s *ClientSession) SaveInFile() error {
 	if err := s.file.Truncate(0); err != nil {
 		return err

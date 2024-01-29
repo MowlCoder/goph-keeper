@@ -13,6 +13,7 @@ const (
 	maxBodyBytes = 52_428_800
 )
 
+// Unmarshal - parse request body in given structure
 func Unmarshal(w http.ResponseWriter, r *http.Request, data interface{}) (int, error) {
 	if t := r.Header.Get("content-type"); len(t) < 16 || t[:16] != "application/json" {
 		return http.StatusUnsupportedMediaType, fmt.Errorf("content-type is not application/json")

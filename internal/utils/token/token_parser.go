@@ -6,13 +6,16 @@ import (
 	"github.com/MowlCoder/goph-keeper/internal/domain"
 )
 
+// Parser - struct responsible for parsing JWT tokens
 type Parser struct {
 }
 
+// NewParser - constructor for Parser struct
 func NewParser() *Parser {
 	return &Parser{}
 }
 
+// Parse - parse JWT token and returns domain.TokenClaim
 func (p *Parser) Parse(tokenString string) (*domain.TokenClaim, error) {
 	tokenClaim := &domain.TokenClaim{}
 	token, err := jwt.ParseWithClaims(tokenString, tokenClaim, func(token *jwt.Token) (interface{}, error) {

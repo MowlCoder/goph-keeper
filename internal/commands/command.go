@@ -15,11 +15,13 @@ type command struct {
 	Exec        func(args []string) error
 }
 
+// CommandManager - struct responsible for managing commands
 type CommandManager struct {
 	commands      map[string]command
 	commandsByTag map[string][]command
 }
 
+// NewCommandManager - constructor for CommandManager struct
 func NewCommandManager() *CommandManager {
 	manager := CommandManager{
 		commands:      make(map[string]command),
@@ -30,6 +32,7 @@ func NewCommandManager() *CommandManager {
 	return &manager
 }
 
+// RegisterCommand - register command with given config values
 func (m *CommandManager) RegisterCommand(
 	name string,
 	description string,
@@ -49,6 +52,7 @@ func (m *CommandManager) RegisterCommand(
 	m.commandsByTag[tag] = append(m.commandsByTag[tag], cmd)
 }
 
+// ExecCommandWithName - execute exec function of command with given name
 func (m *CommandManager) ExecCommandWithName(name string, args []string) error {
 	cmd, ok := m.commands[name]
 	if !ok {

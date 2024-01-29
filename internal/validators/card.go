@@ -5,6 +5,7 @@ import (
 	"strings"
 )
 
+// ValidateCardNumber - remove spaces in given string and check if length of string is equal 16
 func ValidateCardNumber(number string) bool {
 	clearNumber := strings.ReplaceAll(number, " ", "")
 
@@ -15,6 +16,7 @@ func ValidateCardNumber(number string) bool {
 	return true
 }
 
+// ValidateExpiredAt - validate date in format mm/yy (e.g 04/30)
 func ValidateExpiredAt(expiredAt string) bool {
 	parts := strings.Split(expiredAt, "/")
 	if len(parts) != 2 {
@@ -38,6 +40,7 @@ func ValidateExpiredAt(expiredAt string) bool {
 	return true
 }
 
+// ValidateCVV - check if cvv len is 3 and it is a valid number
 func ValidateCVV(cvv string) bool {
 	if len(cvv) != 3 {
 		return false

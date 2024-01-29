@@ -7,6 +7,7 @@ import (
 	"github.com/caarlos0/env/v9"
 )
 
+// Server - struct responsible for storing server config
 type Server struct {
 	HTTPAddr    string `env:"HTTP_ADDR" json:"http_addr"`
 	DatabaseDSN string `env:"DATABASE_DSN" json:"database_dsn"`
@@ -17,6 +18,7 @@ type Server struct {
 	DataSecretKey string `env:"DATA_SECRET_KEY" json:"data_secret_key"`
 }
 
+// Parse - parse server config from flags and envs
 func (s *Server) Parse() {
 	flag.StringVar(&s.HTTPAddr, "http", ":4000", "Server will listen this http address")
 	flag.StringVar(&s.DatabaseDSN, "dns", "", "Database connect uri")

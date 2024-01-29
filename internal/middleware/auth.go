@@ -14,16 +14,19 @@ type tokenParser interface {
 	Parse(token string) (*domain.TokenClaim, error)
 }
 
+// AuthMiddleware - struct responsible for validation user session
 type AuthMiddleware struct {
 	tokenParser tokenParser
 }
 
+// NewAuthMiddleware - constructor for AuthMiddleware struct
 func NewAuthMiddleware(tokenParser tokenParser) *AuthMiddleware {
 	return &AuthMiddleware{
 		tokenParser: tokenParser,
 	}
 }
 
+// Middleware - responsible for checking request headers for validating JWT token
 func (m *AuthMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token, err := getTokenFromHeader(r.Header)

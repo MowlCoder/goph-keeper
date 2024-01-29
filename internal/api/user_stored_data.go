@@ -15,12 +15,14 @@ import (
 	"github.com/MowlCoder/goph-keeper/pkg/httputils"
 )
 
+// UserStoredDataAPI - struct responsible for communicating with external API
 type UserStoredDataAPI struct {
 	baseHTTPAddress string
 	httpClient      *http.Client
 	session         *session.ClientSession
 }
 
+// NewUserStoredDataAPI - constructor for UserStoredDataAPI struct
 func NewUserStoredDataAPI(
 	baseHTTPAddress string,
 	httpClient *http.Client,
@@ -33,6 +35,7 @@ func NewUserStoredDataAPI(
 	}
 }
 
+// GetAll - get all users records
 func (api *UserStoredDataAPI) GetAll(ctx context.Context) ([]domain.UserStoredData, error) {
 	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/api/v1/data", api.baseHTTPAddress), nil)
 	if err != nil {
@@ -80,6 +83,7 @@ type addBody struct {
 	Meta string      `json:"meta"`
 }
 
+// Add - add user record to external service
 func (api *UserStoredDataAPI) Add(ctx context.Context, entity domain.UserStoredData) (*domain.UserStoredData, error) {
 	body := &addBody{
 		Data: entity.Data,
@@ -122,6 +126,7 @@ func (api *UserStoredDataAPI) Add(ctx context.Context, entity domain.UserStoredD
 	return &respBody, nil
 }
 
+// UpdateByID - update record with given id at external service
 func (api *UserStoredDataAPI) UpdateByID(ctx context.Context, id int, data interface{}, meta string) (*domain.UserStoredData, error) {
 	body := &addBody{
 		Data: data,
@@ -164,6 +169,7 @@ func (api *UserStoredDataAPI) UpdateByID(ctx context.Context, id int, data inter
 	return &respBody, nil
 }
 
+// DeleteBatch - delete several records with given ids at external service
 func (api *UserStoredDataAPI) DeleteBatch(ctx context.Context, ids []int) error {
 	body := &dtos.DeleteBatchBody{
 		IDs: ids,

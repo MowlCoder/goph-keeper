@@ -9,16 +9,19 @@ import (
 	"io"
 )
 
+// Cryptor - structure responsible for encryption and decryption strings or bytes arrays
 type Cryptor struct {
 	encryptionKey []byte
 }
 
+// New - constructor for Cryptor structure
 func New(key string) *Cryptor {
 	return &Cryptor{
 		encryptionKey: []byte(key),
 	}
 }
 
+// Encrypt - encrypt given string and return encrypted string
 func (c *Cryptor) Encrypt(raw string) (string, error) {
 	b, err := c.EncryptBytes([]byte(raw))
 	if err != nil {
@@ -28,6 +31,7 @@ func (c *Cryptor) Encrypt(raw string) (string, error) {
 	return string(b), nil
 }
 
+// Decrypt - decrypt given string and return decrypted string
 func (c *Cryptor) Decrypt(crypted string) (string, error) {
 	b, err := c.DecryptBytes([]byte(crypted))
 	if err != nil {
@@ -37,6 +41,7 @@ func (c *Cryptor) Decrypt(crypted string) (string, error) {
 	return string(b), nil
 }
 
+// EncryptBytes - encrypt given byte array and return encrypted byte array
 func (c *Cryptor) EncryptBytes(raw []byte) ([]byte, error) {
 	rawBytes := raw
 	generatedCipher, err := aes.NewCipher(c.encryptionKey)
@@ -60,6 +65,7 @@ func (c *Cryptor) EncryptBytes(raw []byte) ([]byte, error) {
 	return []byte(b64Password), nil
 }
 
+// DecryptBytes - decrypt given byte array and return decrypted byte array
 func (c *Cryptor) DecryptBytes(crypted []byte) ([]byte, error) {
 	encryptedPassword, err := base64.StdEncoding.DecodeString(string(crypted))
 	if err != nil {
