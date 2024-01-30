@@ -36,6 +36,17 @@ func NewUserHandler(
 	}
 }
 
+// Register godoc
+// @Summary Register user
+// @Accept json
+// @Produce json
+// @Tags users
+// @Param dto body dtos.RegisterBody true "body"
+// @Success 201 {object} dtos.RegisterResponse
+// @Failure 400 {object} httputils.HTTPError
+// @Failure 409 {object} httputils.HTTPError
+// @Failure 500 {object} httputils.HTTPError
+// @Router /api/v1/user/register [post]
 func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var body dtos.RegisterBody
 	if statusCode, err := jsonutil.Unmarshal(w, r, &body); err != nil {
@@ -65,6 +76,16 @@ func (h *UserHandler) Register(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Authorize godoc
+// @Summary Authorize user
+// @Accept json
+// @Produce json
+// @Tags users
+// @Param dto body dtos.AuthorizeBody true "body"
+// @Success 200 {object} dtos.AuthorizeResponse
+// @Failure 400 {object} httputils.HTTPError
+// @Failure 500 {object} httputils.HTTPError
+// @Router /api/v1/user/authorize [post]
 func (h *UserHandler) Authorize(w http.ResponseWriter, r *http.Request) {
 	var body dtos.AuthorizeBody
 	if statusCode, err := jsonutil.Unmarshal(w, r, &body); err != nil {

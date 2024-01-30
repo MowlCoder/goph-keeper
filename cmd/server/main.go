@@ -111,6 +111,14 @@ func main() {
 	log.Println("goph-keeper server shutdown process successfully completed")
 }
 
+// @title Goph Keeper
+// @version 1.0
+// @description Goph Keeper allows you to save your login passwords, cards, plain texts and even files
+// @BasePath /
+
+// @securityDefinitions.apikey	Bearer
+// @in							header
+// @name						Authorization
 func makeHTTPRouter(
 	authMiddleware *middleware.AuthMiddleware,
 

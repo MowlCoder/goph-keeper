@@ -1,0 +1,314 @@
+basePath: /
+definitions:
+  domain.CardData:
+    properties:
+      cvv:
+        type: string
+      expired_at:
+        type: string
+      number:
+        type: string
+    type: object
+  domain.UserStoredData:
+    properties:
+      created_at:
+        type: string
+      crypted_data:
+        items:
+          type: integer
+        type: array
+      data: {}
+      data_type:
+        type: string
+      id:
+        type: integer
+      meta:
+        type: string
+      path_on_disc:
+        type: string
+      user_id:
+        type: integer
+      version:
+        type: integer
+    type: object
+  dtos.AddNewCardBody:
+    properties:
+      data:
+        $ref: '#/definitions/domain.CardData'
+      meta:
+        type: string
+    type: object
+  dtos.AuthorizeBody:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  dtos.AuthorizeResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  dtos.DeleteBatchBody:
+    properties:
+      ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  dtos.RegisterBody:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  dtos.RegisterResponse:
+    properties:
+      token:
+        type: string
+    type: object
+  httputils.HTTPError:
+    properties:
+      code:
+        type: integer
+      error:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: Goph Keeper allows you to save your login passwords, cards, plain texts
+    and even files
+  title: Goph Keeper
+  version: "1.0"
+paths:
+  /api/v1/data:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: body
+        in: body
+        name: dto
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.DeleteBatchBody'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+      security:
+      - Bearer: []
+      summary: Save user data
+      tags:
+      - data
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/domain.UserStoredData'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+      security:
+      - Bearer: []
+      summary: Get all user saved data
+      tags:
+      - data
+  /api/v1/data/{type}:
+    get:
+      parameters:
+      - description: Data Type
+        in: path
+        name: type
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.UserStoredData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+      security:
+      - Bearer: []
+      summary: Get all user saved data with type
+      tags:
+      - data
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data Type
+        in: path
+        name: type
+        required: true
+        type: string
+      - description: body
+        in: body
+        name: dto
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AddNewCardBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.UserStoredData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+      security:
+      - Bearer: []
+      summary: Save user data
+      tags:
+      - data
+  /api/v1/data/update/{id}:
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Data Record ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: body
+        in: body
+        name: dto
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AddNewCardBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.UserStoredData'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+      security:
+      - Bearer: []
+      summary: Update one record with given id
+      tags:
+      - data
+  /api/v1/user/authorize:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: body
+        in: body
+        name: dto
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.AuthorizeBody'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dtos.AuthorizeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+      summary: Authorize user
+      tags:
+      - users
+  /api/v1/user/register:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: body
+        in: body
+        name: dto
+        required: true
+        schema:
+          $ref: '#/definitions/dtos.RegisterBody'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dtos.RegisterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/httputils.HTTPError'
+      summary: Register user
+      tags:
+      - users
+securityDefinitions:
+  Bearer:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

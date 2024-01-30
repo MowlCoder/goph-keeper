@@ -34,6 +34,16 @@ func NewUserStoredDataHandler(service userStoredDataService) *UserStoredDataHand
 	}
 }
 
+// GetUserAll godoc
+// @Summary Get all user saved data
+// @Produce json
+// @Tags data
+// @Security Bearer
+// @Success 200 {array} domain.UserStoredData
+// @Failure 400 {object} httputils.HTTPError
+// @Failure 401
+// @Failure 500 {object} httputils.HTTPError
+// @Router /api/v1/data [get]
 func (h *UserStoredDataHandler) GetUserAll(w http.ResponseWriter, r *http.Request) {
 	userID, err := usercontext.GetUserIDFromContext(r.Context())
 	if err != nil {
@@ -50,6 +60,17 @@ func (h *UserStoredDataHandler) GetUserAll(w http.ResponseWriter, r *http.Reques
 	httputils.SendJSONResponse(w, http.StatusOK, dataSet)
 }
 
+// GetOfType godoc
+// @Summary Get all user saved data with type
+// @Produce json
+// @Tags data
+// @Security Bearer
+// @Param type path string true "Data Type"
+// @Success 200 {object} domain.UserStoredData
+// @Failure 400 {object} httputils.HTTPError
+// @Failure 401
+// @Failure 500 {object} httputils.HTTPError
+// @Router /api/v1/data/{type} [get]
 func (h *UserStoredDataHandler) GetOfType(w http.ResponseWriter, r *http.Request) {
 	userID, err := usercontext.GetUserIDFromContext(r.Context())
 	if err != nil {
@@ -86,6 +107,19 @@ func (h *UserStoredDataHandler) GetOfType(w http.ResponseWriter, r *http.Request
 	httputils.SendJSONResponse(w, http.StatusOK, paginatedResult)
 }
 
+// Add godoc
+// @Summary Save user data
+// @Accept json
+// @Produce json
+// @Tags data
+// @Security Bearer
+// @Param type path string true "Data Type"
+// @Param dto body dtos.AddNewCardBody true "body"
+// @Success 200 {object} domain.UserStoredData
+// @Failure 400 {object} httputils.HTTPError
+// @Failure 401
+// @Failure 500 {object} httputils.HTTPError
+// @Router /api/v1/data/{type} [post]
 func (h *UserStoredDataHandler) Add(w http.ResponseWriter, r *http.Request) {
 	userID, err := usercontext.GetUserIDFromContext(r.Context())
 	if err != nil {
@@ -114,6 +148,19 @@ func (h *UserStoredDataHandler) Add(w http.ResponseWriter, r *http.Request) {
 	httputils.SendJSONResponse(w, http.StatusCreated, data)
 }
 
+// UpdateOne godoc
+// @Summary Update one record with given id
+// @Accept json
+// @Produce json
+// @Tags data
+// @Security Bearer
+// @Param id path string true "Data Record ID"
+// @Param dto body dtos.AddNewCardBody true "body"
+// @Success 200 {object} domain.UserStoredData
+// @Failure 400 {object} httputils.HTTPError
+// @Failure 401
+// @Failure 500 {object} httputils.HTTPError
+// @Router /api/v1/data/update/{id} [put]
 func (h *UserStoredDataHandler) UpdateOne(w http.ResponseWriter, r *http.Request) {
 	userID, err := usercontext.GetUserIDFromContext(r.Context())
 	if err != nil {
@@ -153,6 +200,18 @@ func (h *UserStoredDataHandler) UpdateOne(w http.ResponseWriter, r *http.Request
 	httputils.SendJSONResponse(w, http.StatusOK, updatedUserData)
 }
 
+// DeleteBatch godoc
+// @Summary Save user data
+// @Accept json
+// @Produce json
+// @Tags data
+// @Security Bearer
+// @Param dto body dtos.DeleteBatchBody true "body"
+// @Success 204
+// @Failure 400 {object} httputils.HTTPError
+// @Failure 401
+// @Failure 500 {object} httputils.HTTPError
+// @Router /api/v1/data [delete]
 func (h *UserStoredDataHandler) DeleteBatch(w http.ResponseWriter, r *http.Request) {
 	userID, err := usercontext.GetUserIDFromContext(r.Context())
 	if err != nil {

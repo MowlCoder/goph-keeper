@@ -43,6 +43,9 @@ mocks:
 	mockgen -source="./internal/handlers/user.go" -destination="./internal/handlers/mocks/user.go"
 	mockgen -source="./internal/handlers/user_stored_data.go" -destination="./internal/handlers/mocks/user_stored_data.go"
 
+doc:
+	swag init --d ./cmd/server,./internal/handlers,./internal/dtos,./pkg/httputils,./internal/domain
+
 fmt:
 	gofmt -s -w .
 	goimports -w .
