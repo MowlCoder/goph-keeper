@@ -8,6 +8,7 @@ import (
 	"github.com/MowlCoder/goph-keeper/internal/domain"
 	"github.com/MowlCoder/goph-keeper/internal/session"
 	"github.com/MowlCoder/goph-keeper/internal/validators"
+	"github.com/MowlCoder/goph-keeper/pkg/input"
 )
 
 type CardHandler struct {
@@ -27,31 +28,32 @@ func NewCardHandler(
 }
 
 func (h *CardHandler) AddCard(args []string) error {
-	if len(args) < 4 {
-		return domain.ErrInvalidCommandUsage
-	}
-
-	if !validators.ValidateCardNumber(args[0]) {
+	cardNumber, _ := input.GetConsoleInput("Enter card number: ", "")
+	if !validators.ValidateCardNumber(cardNumber) {
 		return domain.ErrInvalidCardNumber
 	}
 
-	if !validators.ValidateExpiredAt(args[1]) {
+	expiredAt, _ := input.GetConsoleInput("Enter expired date (e.g. 04/30): ", "")
+	if !validators.ValidateExpiredAt(expiredAt) {
 		return domain.ErrInvalidCardExpiredAt
 	}
 
-	if !validators.ValidateCVV(args[2]) {
+	cvv, _ := input.GetConsoleInput("Enter card cvv: ", "")
+	if !validators.ValidateCVV(cvv) {
 		return domain.ErrInvalidCardCVV
 	}
+
+	meta, _ := input.GetConsoleInput("Enter meta information: ", "")
 
 	_, err := h.userStoredDataService.Add(
 		context.Background(),
 		domain.CardDataType,
 		domain.CardData{
-			Number:    args[0],
-			ExpiredAt: args[1],
-			CVV:       args[2],
+			Number:    cardNumber,
+			ExpiredAt: expiredAt,
+			CVV:       cvv,
 		},
-		args[3],
+		meta,
 	)
 	if err != nil {
 		return err
@@ -92,7 +94,7 @@ func (h *CardHandler) DeleteCard(args []string) error {
 }
 
 func (h *CardHandler) UpdateCard(args []string) error {
-	if len(args) < 5 {
+	if len(args) != 1 {
 		return domain.ErrInvalidCommandUsage
 	}
 
@@ -101,27 +103,39 @@ func (h *CardHandler) UpdateCard(args []string) error {
 		return domain.ErrInvalidCommandUsage
 	}
 
-	if !validators.ValidateCardNumber(args[1]) {
+	userStoredData, err := h.userStoredDataService.GetByID(context.Background(), id)
+	if err != nil {
+		return err
+	}
+
+	data := userStoredData.Data.(domain.CardData)
+
+	cardNumber, _ := input.GetConsoleInput(fmt.Sprintf("Enter card number (current - %s): ", data.Number), data.Number)
+	if !validators.ValidateCardNumber(cardNumber) {
 		return domain.ErrInvalidCardNumber
 	}
 
-	if !validators.ValidateExpiredAt(args[2]) {
+	expiredAt, _ := input.GetConsoleInput(fmt.Sprintf("Enter expired date (current - %s): ", data.ExpiredAt), data.ExpiredAt)
+	if !validators.ValidateExpiredAt(expiredAt) {
 		return domain.ErrInvalidCardExpiredAt
 	}
 
-	if !validators.ValidateCVV(args[3]) {
+	cvv, _ := input.GetConsoleInput(fmt.Sprintf("Enter card cvv (current - %s): ", data.CVV), data.CVV)
+	if !validators.ValidateCVV(cvv) {
 		return domain.ErrInvalidCardCVV
 	}
+
+	meta, _ := input.GetConsoleInput(fmt.Sprintf("Enter meta information (current - %s): ", userStoredData.Meta), userStoredData.Meta)
 
 	_, err = h.userStoredDataService.UpdateByID(
 		context.Background(),
 		id,
 		domain.CardData{
-			Number:    args[1],
-			ExpiredAt: args[2],
-			CVV:       args[3],
+			Number:    cardNumber,
+			ExpiredAt: expiredAt,
+			CVV:       cvv,
 		},
-		args[4],
+		meta,
 	)
 	if err != nil {
 		return err

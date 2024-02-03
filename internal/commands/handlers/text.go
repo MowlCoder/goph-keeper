@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"github.com/MowlCoder/goph-keeper/internal/domain"
 	"github.com/MowlCoder/goph-keeper/internal/session"
+	"github.com/MowlCoder/goph-keeper/pkg/input"
 )
 
 type TextHandler struct {
@@ -27,17 +27,23 @@ func NewTextHandler(
 }
 
 func (h *TextHandler) AddText(args []string) error {
-	if len(args) == 0 {
-		return domain.ErrInvalidCommandUsage
+	title, _ := input.GetConsoleInput("Enter title: ", "")
+	if title == "" {
+		return domain.ErrInvalidInputValue
+	}
+
+	text, _ := input.GetConsoleInput("Enter text: ", "")
+	if text == "" {
+		return domain.ErrInvalidInputValue
 	}
 
 	_, err := h.userStoredDataService.Add(
 		context.Background(),
 		domain.TextDataType,
 		domain.TextData{
-			Text: strings.Join(args[1:], " "),
+			Text: text,
 		},
-		args[0],
+		title,
 	)
 	if err != nil {
 		return err
@@ -49,7 +55,7 @@ func (h *TextHandler) AddText(args []string) error {
 }
 
 func (h *TextHandler) UpdateText(args []string) error {
-	if len(args) < 3 {
+	if len(args) != 1 {
 		return domain.ErrInvalidCommandUsage
 	}
 
@@ -58,13 +64,30 @@ func (h *TextHandler) UpdateText(args []string) error {
 		return domain.ErrInvalidCommandUsage
 	}
 
+	userStoredData, err := h.userStoredDataService.GetByID(context.Background(), id)
+	if err != nil {
+		return err
+	}
+
+	data := userStoredData.Data.(domain.TextData)
+
+	title, _ := input.GetConsoleInput(fmt.Sprintf("Enter title (current - %s): ", userStoredData.Meta), userStoredData.Meta)
+	if title == "" {
+		return domain.ErrInvalidInputValue
+	}
+
+	text, _ := input.GetConsoleInput(fmt.Sprintf("Enter text (current - %s): ", data.Text), data.Text)
+	if text == "" {
+		return domain.ErrInvalidInputValue
+	}
+
 	_, err = h.userStoredDataService.UpdateByID(
 		context.Background(),
 		id,
 		domain.TextData{
-			Text: strings.Join(args[2:], " "),
+			Text: text,
 		},
-		args[1],
+		title,
 	)
 	if err != nil {
 		return err

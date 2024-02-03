@@ -16,9 +16,10 @@ var (
 
 	ErrInvalidCardNumber    = errors.New("invalid card number")
 	ErrInvalidCardExpiredAt = errors.New("invalid card expired at (e.g. 4/30)")
-	ErrInvalidCardCVV       = errors.New("invalid card cvv)")
+	ErrInvalidCardCVV       = errors.New("invalid card cvv")
 
 	ErrCommandNotFound     = errors.New("command not found")
 	ErrQuitApp             = errors.New("requested quit from the app")
 	ErrInvalidCommandUsage = errors.New("invalid command usage")
+	ErrInvalidInputValue   = errors.New("invalid input value")
 )

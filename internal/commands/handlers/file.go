@@ -10,6 +10,7 @@ import (
 
 	"github.com/MowlCoder/goph-keeper/internal/domain"
 	"github.com/MowlCoder/goph-keeper/internal/session"
+	"github.com/MowlCoder/goph-keeper/pkg/input"
 )
 
 type FileHandler struct {
@@ -29,11 +30,13 @@ func NewFileHandler(
 }
 
 func (h *FileHandler) AddFile(args []string) error {
-	if len(args) < 2 {
-		return domain.ErrInvalidCommandUsage
+	filePath, _ := input.GetConsoleInput("Enter file path: ", "")
+	if filePath == "" {
+		return domain.ErrInvalidInputValue
 	}
 
-	filePath := args[0]
+	meta, _ := input.GetConsoleInput("Enter meta information: ", "")
+
 	fileContent, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -48,7 +51,7 @@ func (h *FileHandler) AddFile(args []string) error {
 		context.Background(),
 		domain.FileDataType,
 		fileData,
-		args[1],
+		meta,
 	)
 	if err != nil {
 		return err
@@ -111,7 +114,7 @@ func (h *FileHandler) GetFiles(args []string) error {
 }
 
 func (h *FileHandler) DecryptFile(args []string) error {
-	if len(args) != 2 {
+	if len(args) != 1 {
 		return domain.ErrInvalidCommandUsage
 	}
 
@@ -120,7 +123,11 @@ func (h *FileHandler) DecryptFile(args []string) error {
 		return domain.ErrInvalidCommandUsage
 	}
 
-	dirPath := args[1]
+	dirPath, _ := input.GetConsoleInput("Enter directory where decrypt file: ", "")
+	if dirPath == "" {
+		return domain.ErrInvalidInputValue
+	}
+
 	if err := os.Mkdir(dirPath, os.ModePerm); err != nil && !errors.Is(err, os.ErrExist) {
 		return err
 	}
@@ -142,7 +149,7 @@ func (h *FileHandler) DecryptFile(args []string) error {
 }
 
 func (h *FileHandler) UpdateFile(args []string) error {
-	if len(args) < 3 {
+	if len(args) != 1 {
 		return domain.ErrInvalidCommandUsage
 	}
 
@@ -151,7 +158,13 @@ func (h *FileHandler) UpdateFile(args []string) error {
 		return domain.ErrInvalidCommandUsage
 	}
 
-	filePath := args[1]
+	filePath, _ := input.GetConsoleInput("Enter file path: ", "")
+	if filePath == "" {
+		return domain.ErrInvalidInputValue
+	}
+
+	meta, _ := input.GetConsoleInput("Enter meta information: ", "")
+
 	fileContent, err := os.ReadFile(filePath)
 	if err != nil {
 		return err
@@ -166,7 +179,7 @@ func (h *FileHandler) UpdateFile(args []string) error {
 		context.Background(),
 		id,
 		fileData,
-		args[2],
+		meta,
 	)
 	if err != nil {
 		return err

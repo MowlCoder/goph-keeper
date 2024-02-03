@@ -12,6 +12,7 @@ import (
 	"github.com/MowlCoder/goph-keeper/internal/dtos"
 	"github.com/MowlCoder/goph-keeper/internal/session"
 	"github.com/MowlCoder/goph-keeper/pkg/httputils"
+	"github.com/MowlCoder/goph-keeper/pkg/input"
 )
 
 type UserHandler struct {
@@ -30,13 +31,19 @@ func NewUserHandler(
 }
 
 func (h *UserHandler) Register(args []string) error {
-	if len(args) != 2 {
-		return domain.ErrInvalidCommandUsage
+	email, _ := input.GetConsoleInput("Enter email: ", "")
+	if email == "" {
+		return domain.ErrInvalidInputValue
+	}
+
+	password, _ := input.GetConsoleInput("Enter password: ", "")
+	if password == "" {
+		return domain.ErrInvalidInputValue
 	}
 
 	body := dtos.RegisterBody{
-		Email:    args[0],
-		Password: args[1],
+		Email:    email,
+		Password: password,
 	}
 
 	if !body.Validate() {
@@ -84,13 +91,19 @@ func (h *UserHandler) Register(args []string) error {
 }
 
 func (h *UserHandler) Authorize(args []string) error {
-	if len(args) != 2 {
-		return domain.ErrInvalidCommandUsage
+	email, _ := input.GetConsoleInput("Enter email: ", "")
+	if email == "" {
+		return domain.ErrInvalidInputValue
+	}
+
+	password, _ := input.GetConsoleInput("Enter password: ", "")
+	if password == "" {
+		return domain.ErrInvalidInputValue
 	}
 
 	body := dtos.AuthorizeBody{
-		Email:    args[0],
-		Password: args[1],
+		Email:    email,
+		Password: password,
 	}
 
 	if !body.Validate() {

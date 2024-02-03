@@ -47,7 +47,7 @@ func main() {
 
 	httpClient := &http.Client{
 		Transport: http.DefaultTransport,
-		Timeout:   time.Second * 60,
+		Timeout:   time.Second * time.Duration(clientConfig.ApiServerTimeout),
 	}
 
 	userCache, err := os.UserCacheDir()
@@ -198,14 +198,14 @@ func registerUserCommands(
 		"login",
 		"start user session",
 		"user",
-		"login <email:string> <password:string>",
+		"login",
 		userHandler.Authorize,
 	)
 	commandManager.RegisterCommand(
 		"register",
 		"create user",
 		"user",
-		"register <email:string> <password:string>",
+		"register",
 		userHandler.Register,
 	)
 }
@@ -218,7 +218,7 @@ func registerLogPassCommands(
 		"lp-save",
 		"save login password pair",
 		"login password",
-		"lp-save <login:string> <password:string> <source:string>",
+		"lp-save",
 		logPassHandler.AddPair,
 	)
 	commandManager.RegisterCommand(
@@ -232,7 +232,7 @@ func registerLogPassCommands(
 		"lp-upd",
 		"update logpass pair by id",
 		"login password",
-		"lp-upd <id:int> <login:string> <password:string> <source:string>",
+		"lp-upd <id:int>",
 		logPassHandler.UpdatePair,
 	)
 	commandManager.RegisterCommand(
@@ -252,7 +252,7 @@ func registerCardCommands(
 		"card-save",
 		"save new card",
 		"card",
-		"card-save <number:string> <expiredAt:string> <cvv:string> <meta:string>",
+		"card-save",
 		cardHandler.AddCard,
 	)
 	commandManager.RegisterCommand(
@@ -266,7 +266,7 @@ func registerCardCommands(
 		"card-upd",
 		"update card by id",
 		"card",
-		"card-upd <id:int> <number:string> <expiredAt:string> <cvv:string> <meta:string>",
+		"card-upd <id:int>",
 		cardHandler.UpdateCard,
 	)
 	commandManager.RegisterCommand(
@@ -286,7 +286,7 @@ func registerTextCommands(
 		"text-save",
 		"save new text",
 		"text",
-		"text-save <title:string> <text:string>",
+		"text-save",
 		textHandler.AddText,
 	)
 	commandManager.RegisterCommand(
@@ -300,7 +300,7 @@ func registerTextCommands(
 		"text-upd",
 		"update text by id",
 		"text",
-		"text-upd <id:int> <meta:string> <text:string>",
+		"text-upd <id:int>",
 		textHandler.UpdateText,
 	)
 	commandManager.RegisterCommand(
@@ -320,7 +320,7 @@ func registerFileCommands(
 		"file-save",
 		"save file",
 		"file",
-		"file-save <path:string> <meta:string>",
+		"file-save",
 		fileHandler.AddFile,
 	)
 	commandManager.RegisterCommand(
@@ -334,14 +334,14 @@ func registerFileCommands(
 		"file-decrypt",
 		"decrypt file to given directory",
 		"file",
-		"file-decrypt <id:int> <dir:string>",
+		"file-decrypt <id:int>",
 		fileHandler.DecryptFile,
 	)
 	commandManager.RegisterCommand(
 		"file-upd",
 		"update file by id",
 		"file",
-		"file-upd <id:int> <path:string> <meta:string>",
+		"file-upd <id:int>",
 		fileHandler.UpdateFile,
 	)
 	commandManager.RegisterCommand(

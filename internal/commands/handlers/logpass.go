@@ -7,6 +7,7 @@ import (
 
 	"github.com/MowlCoder/goph-keeper/internal/domain"
 	"github.com/MowlCoder/goph-keeper/internal/session"
+	"github.com/MowlCoder/goph-keeper/pkg/input"
 )
 
 type LogPassHandler struct {
@@ -25,18 +26,29 @@ func NewLogPassHandler(
 }
 
 func (h *LogPassHandler) AddPair(args []string) error {
-	if len(args) != 3 {
-		return domain.ErrInvalidCommandUsage
+	login, _ := input.GetConsoleInput("Enter login: ", "")
+	if login == "" {
+		return domain.ErrInvalidInputValue
+	}
+
+	password, _ := input.GetConsoleInput("Enter password: ", "")
+	if password == "" {
+		return domain.ErrInvalidInputValue
+	}
+
+	meta, _ := input.GetConsoleInput("Enter source: ", "")
+	if meta == "" {
+		return domain.ErrInvalidInputValue
 	}
 
 	_, err := h.userStoredDataService.Add(
 		context.Background(),
 		domain.LogPassDataType,
 		&domain.LogPassData{
-			Login:    args[0],
-			Password: args[1],
+			Login:    login,
+			Password: password,
 		},
-		args[2],
+		meta,
 	)
 	if err != nil {
 		return err
@@ -48,7 +60,7 @@ func (h *LogPassHandler) AddPair(args []string) error {
 }
 
 func (h *LogPassHandler) UpdatePair(args []string) error {
-	if len(args) != 4 {
+	if len(args) != 1 {
 		return domain.ErrInvalidCommandUsage
 	}
 
@@ -57,14 +69,36 @@ func (h *LogPassHandler) UpdatePair(args []string) error {
 		return domain.ErrInvalidCommandUsage
 	}
 
+	userStoredData, err := h.userStoredDataService.GetByID(context.Background(), id)
+	if err != nil {
+		return err
+	}
+
+	data := userStoredData.Data.(domain.LogPassData)
+
+	login, _ := input.GetConsoleInput(fmt.Sprintf("Enter login (current - %s): ", data.Login), data.Login)
+	if login == "" {
+		return domain.ErrInvalidInputValue
+	}
+
+	password, _ := input.GetConsoleInput(fmt.Sprintf("Enter password (current - %s): ", data.Password), data.Password)
+	if password == "" {
+		return domain.ErrInvalidInputValue
+	}
+
+	meta, _ := input.GetConsoleInput(fmt.Sprintf("Enter source (current - %s): ", userStoredData.Meta), userStoredData.Meta)
+	if meta == "" {
+		return domain.ErrInvalidInputValue
+	}
+
 	_, err = h.userStoredDataService.UpdateByID(
 		context.Background(),
 		id,
 		domain.LogPassData{
-			Login:    args[1],
-			Password: args[2],
+			Login:    login,
+			Password: password,
 		},
-		args[3],
+		meta,
 	)
 	if err != nil {
 		return err
