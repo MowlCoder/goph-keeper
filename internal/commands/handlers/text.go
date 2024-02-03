@@ -27,12 +27,12 @@ func NewTextHandler(
 }
 
 func (h *TextHandler) AddText(args []string) error {
-	title, _ := input.GetConsoleInput("Enter title: ", "")
+	title := input.GetConsoleInput("Enter title: ", "")
 	if title == "" {
 		return domain.ErrInvalidInputValue
 	}
 
-	text, _ := input.GetConsoleInput("Enter text: ", "")
+	text := input.GetConsoleInput("Enter text: ", "")
 	if text == "" {
 		return domain.ErrInvalidInputValue
 	}
@@ -71,12 +71,12 @@ func (h *TextHandler) UpdateText(args []string) error {
 
 	data := userStoredData.Data.(domain.TextData)
 
-	title, _ := input.GetConsoleInput(fmt.Sprintf("Enter title (current - %s): ", userStoredData.Meta), userStoredData.Meta)
+	title := input.GetConsoleInput(fmt.Sprintf("Enter title (current - %s): ", userStoredData.Meta), userStoredData.Meta)
 	if title == "" {
 		return domain.ErrInvalidInputValue
 	}
 
-	text, _ := input.GetConsoleInput(fmt.Sprintf("Enter text (current - %s): ", data.Text), data.Text)
+	text := input.GetConsoleInput(fmt.Sprintf("Enter text (current - %s): ", data.Text), data.Text)
 	if text == "" {
 		return domain.ErrInvalidInputValue
 	}

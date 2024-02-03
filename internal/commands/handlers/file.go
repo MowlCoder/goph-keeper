@@ -30,12 +30,12 @@ func NewFileHandler(
 }
 
 func (h *FileHandler) AddFile(args []string) error {
-	filePath, _ := input.GetConsoleInput("Enter file path: ", "")
+	filePath := input.GetConsoleInput("Enter file path: ", "")
 	if filePath == "" {
 		return domain.ErrInvalidInputValue
 	}
 
-	meta, _ := input.GetConsoleInput("Enter meta information: ", "")
+	meta := input.GetConsoleInput("Enter meta information: ", "")
 
 	fileContent, err := os.ReadFile(filePath)
 	if err != nil {
@@ -123,7 +123,7 @@ func (h *FileHandler) DecryptFile(args []string) error {
 		return domain.ErrInvalidCommandUsage
 	}
 
-	dirPath, _ := input.GetConsoleInput("Enter directory where decrypt file: ", "")
+	dirPath := input.GetConsoleInput("Enter directory where decrypt file: ", "")
 	if dirPath == "" {
 		return domain.ErrInvalidInputValue
 	}
@@ -158,12 +158,12 @@ func (h *FileHandler) UpdateFile(args []string) error {
 		return domain.ErrInvalidCommandUsage
 	}
 
-	filePath, _ := input.GetConsoleInput("Enter file path: ", "")
+	filePath := input.GetConsoleInput("Enter file path: ", "")
 	if filePath == "" {
 		return domain.ErrInvalidInputValue
 	}
 
-	meta, _ := input.GetConsoleInput("Enter meta information: ", "")
+	meta := input.GetConsoleInput("Enter meta information: ", "")
 
 	fileContent, err := os.ReadFile(filePath)
 	if err != nil {

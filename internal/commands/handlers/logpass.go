@@ -26,17 +26,17 @@ func NewLogPassHandler(
 }
 
 func (h *LogPassHandler) AddPair(args []string) error {
-	login, _ := input.GetConsoleInput("Enter login: ", "")
+	login := input.GetConsoleInput("Enter login: ", "")
 	if login == "" {
 		return domain.ErrInvalidInputValue
 	}
 
-	password, _ := input.GetConsoleInput("Enter password: ", "")
+	password := input.GetConsoleInput("Enter password: ", "")
 	if password == "" {
 		return domain.ErrInvalidInputValue
 	}
 
-	meta, _ := input.GetConsoleInput("Enter source: ", "")
+	meta := input.GetConsoleInput("Enter source: ", "")
 	if meta == "" {
 		return domain.ErrInvalidInputValue
 	}
@@ -76,17 +76,17 @@ func (h *LogPassHandler) UpdatePair(args []string) error {
 
 	data := userStoredData.Data.(domain.LogPassData)
 
-	login, _ := input.GetConsoleInput(fmt.Sprintf("Enter login (current - %s): ", data.Login), data.Login)
+	login := input.GetConsoleInput(fmt.Sprintf("Enter login (current - %s): ", data.Login), data.Login)
 	if login == "" {
 		return domain.ErrInvalidInputValue
 	}
 
-	password, _ := input.GetConsoleInput(fmt.Sprintf("Enter password (current - %s): ", data.Password), data.Password)
+	password := input.GetConsoleInput(fmt.Sprintf("Enter password (current - %s): ", data.Password), data.Password)
 	if password == "" {
 		return domain.ErrInvalidInputValue
 	}
 
-	meta, _ := input.GetConsoleInput(fmt.Sprintf("Enter source (current - %s): ", userStoredData.Meta), userStoredData.Meta)
+	meta := input.GetConsoleInput(fmt.Sprintf("Enter source (current - %s): ", userStoredData.Meta), userStoredData.Meta)
 	if meta == "" {
 		return domain.ErrInvalidInputValue
 	}

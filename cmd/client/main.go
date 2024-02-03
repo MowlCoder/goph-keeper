@@ -77,6 +77,7 @@ func main() {
 
 	clientSession := session.NewClientSession(sessionStorage)
 	userStoredDataAPI := api.NewUserStoredDataAPI(clientConfig.ServerBaseAddr, httpClient, clientSession)
+	userAPI := api.NewUserAPI(clientConfig.ServerBaseAddr, httpClient, clientSession)
 
 	userStoredDataRepository := fileRepositories.NewUserStoredDataRepository(userStoredDataStorage)
 
@@ -84,7 +85,7 @@ func main() {
 
 	userStoredDataService := clientServices.NewUserStoredDataService(userStoredDataRepository, dataCryptor)
 
-	userHandler := handlers.NewUserHandler(httpClient, clientSession)
+	userHandler := handlers.NewUserHandler(httpClient, clientSession, userAPI)
 	logPassHandler := handlers.NewLogPassHandler(clientSession, userStoredDataService)
 	cardHandler := handlers.NewCardHandler(clientSession, userStoredDataService)
 	textHandler := handlers.NewTextHandler(clientSession, userStoredDataService)

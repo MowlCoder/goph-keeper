@@ -28,22 +28,22 @@ func NewCardHandler(
 }
 
 func (h *CardHandler) AddCard(args []string) error {
-	cardNumber, _ := input.GetConsoleInput("Enter card number: ", "")
+	cardNumber := input.GetConsoleInput("Enter card number: ", "")
 	if !validators.ValidateCardNumber(cardNumber) {
 		return domain.ErrInvalidCardNumber
 	}
 
-	expiredAt, _ := input.GetConsoleInput("Enter expired date (e.g. 04/30): ", "")
+	expiredAt := input.GetConsoleInput("Enter expired date (e.g. 04/30): ", "")
 	if !validators.ValidateExpiredAt(expiredAt) {
 		return domain.ErrInvalidCardExpiredAt
 	}
 
-	cvv, _ := input.GetConsoleInput("Enter card cvv: ", "")
+	cvv := input.GetConsoleInput("Enter card cvv: ", "")
 	if !validators.ValidateCVV(cvv) {
 		return domain.ErrInvalidCardCVV
 	}
 
-	meta, _ := input.GetConsoleInput("Enter meta information: ", "")
+	meta := input.GetConsoleInput("Enter meta information: ", "")
 
 	_, err := h.userStoredDataService.Add(
 		context.Background(),
@@ -110,22 +110,22 @@ func (h *CardHandler) UpdateCard(args []string) error {
 
 	data := userStoredData.Data.(domain.CardData)
 
-	cardNumber, _ := input.GetConsoleInput(fmt.Sprintf("Enter card number (current - %s): ", data.Number), data.Number)
+	cardNumber := input.GetConsoleInput(fmt.Sprintf("Enter card number (current - %s): ", data.Number), data.Number)
 	if !validators.ValidateCardNumber(cardNumber) {
 		return domain.ErrInvalidCardNumber
 	}
 
-	expiredAt, _ := input.GetConsoleInput(fmt.Sprintf("Enter expired date (current - %s): ", data.ExpiredAt), data.ExpiredAt)
+	expiredAt := input.GetConsoleInput(fmt.Sprintf("Enter expired date (current - %s): ", data.ExpiredAt), data.ExpiredAt)
 	if !validators.ValidateExpiredAt(expiredAt) {
 		return domain.ErrInvalidCardExpiredAt
 	}
 
-	cvv, _ := input.GetConsoleInput(fmt.Sprintf("Enter card cvv (current - %s): ", data.CVV), data.CVV)
+	cvv := input.GetConsoleInput(fmt.Sprintf("Enter card cvv (current - %s): ", data.CVV), data.CVV)
 	if !validators.ValidateCVV(cvv) {
 		return domain.ErrInvalidCardCVV
 	}
 
-	meta, _ := input.GetConsoleInput(fmt.Sprintf("Enter meta information (current - %s): ", userStoredData.Meta), userStoredData.Meta)
+	meta := input.GetConsoleInput(fmt.Sprintf("Enter meta information (current - %s): ", userStoredData.Meta), userStoredData.Meta)
 
 	_, err = h.userStoredDataService.UpdateByID(
 		context.Background(),
