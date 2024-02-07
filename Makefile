@@ -36,6 +36,10 @@ run-client: build-client
 test:
 	go test ./...
 
+coverage:
+	go test ./... -coverprofile cover.out
+	go tool cover -html=cover.out
+
 mocks:
 	mockgen -source=./internal/services/client/user_stored_data.go -destination=./internal/services/client/mocks/user_stored_data.go
 	mockgen -source=./internal/services/server/user_stored_data.go -destination=./internal/services/server/mocks/user_stored_data.go
