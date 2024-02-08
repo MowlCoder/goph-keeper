@@ -24,13 +24,19 @@ client_ldflags = "-X main.buildDate=$(build_date) -X main.buildVersion=$(client_
 build-server:
 	go build -o $(server_binary_path) ./cmd/server/main.go
 
-run-server: build-server
+run-server:
+	$(server_binary_path)
+
+server: build-server
 	$(server_binary_path)
 
 build-client:
 	go build -ldflags $(client_ldflags) -o $(client_binary_path) ./cmd/client/main.go
 
-run-client: build-client
+run-client:
+	$(client_binary_path)
+
+client: build-client
 	$(client_binary_path)
 
 test:
@@ -46,6 +52,7 @@ mocks:
 	mockgen -source=./internal/services/server/user.go -destination=./internal/services/server/mocks/user.go
 	mockgen -source="./internal/handlers/user.go" -destination="./internal/handlers/mocks/user.go"
 	mockgen -source="./internal/handlers/user_stored_data.go" -destination="./internal/handlers/mocks/user_stored_data.go"
+	mockgen -source="./internal/clientsync/base.go" -destination="./internal/clientsync/mocks/base.go"
 
 doc:
 	swag init --d ./cmd/server,./internal/handlers,./internal/dtos,./pkg/httputils,./internal/domain
