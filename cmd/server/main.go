@@ -10,11 +10,12 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 
 	"github.com/MowlCoder/goph-keeper/internal/config"
 	"github.com/MowlCoder/goph-keeper/internal/handlers"
-	"github.com/MowlCoder/goph-keeper/internal/middleware"
+	customMiddleware "github.com/MowlCoder/goph-keeper/internal/middleware"
 	dbRepositories "github.com/MowlCoder/goph-keeper/internal/repositories/postgresql"
 	serverServices "github.com/MowlCoder/goph-keeper/internal/services/server"
 	"github.com/MowlCoder/goph-keeper/internal/storage/postgresql"
@@ -48,7 +49,7 @@ func main() {
 
 	dataCryptor := cryptor.New(serverConfig.DataSecretKey)
 
-	authMiddleware := middleware.NewAuthMiddleware(tokenParser)
+	authMiddleware := customMiddleware.NewAuthMiddleware(tokenParser)
 
 	userRepository := dbRepositories.NewUserRepository(dbPool)
 	userStoredDataRepository := dbRepositories.NewUserStoredDataRepository(dbPool)
@@ -120,12 +121,14 @@ func main() {
 // @in							header
 // @name						Authorization
 func makeHTTPRouter(
-	authMiddleware *middleware.AuthMiddleware,
+	authMiddleware *customMiddleware.AuthMiddleware,
 
 	userHandler *handlers.UserHandler,
 	userStoredDataHandler *handlers.UserStoredDataHandler,
 ) http.Handler {
 	router := chi.NewRouter()
+
+	router.Use(middleware.Logger)
 
 	router.Route("/api/v1", func(apiRouter chi.Router) {
 		apiRouter.Route("/user", func(userRouter chi.Router) {

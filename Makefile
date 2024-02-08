@@ -16,7 +16,7 @@ else
 	client_data_secret = $(shell cat secrets/data)
 
 	client_binary_path = ./bin/client
-	server_binary_path = ./bin/server.exe
+	server_binary_path = ./bin/server
 endif
 
 client_ldflags = "-X main.buildDate=$(build_date) -X main.buildVersion=$(client_build_version) -X main.dataSecret=$(client_data_secret)"
