@@ -22,14 +22,20 @@ git clone https://github.com/MowlCoder/goph-keeper.git
 go get .
 ```
 3. **Configure Settings:** Create an `.env.client` and `.env.server` files and populate them based on the `.env.client.example` and `.env.server.example` files
-4. **Run application:**
+4. **Build application:**
 ```shell
-go run ./cmd/server/main.go
+make build-server && make build-client
+```
+5. **Run application:**
+```shell
+make run-server
 ```
 ```shell
-go run ./cmd/client/main.go
+make run-client
 ```
 
 ## 📝 Documentation
 
-Documentation is available in the [docs](/docs) directory.
+For client documentation you need to run client and enter `help` command.
+
+API documentation is available in the [docs](/docs) directory.
